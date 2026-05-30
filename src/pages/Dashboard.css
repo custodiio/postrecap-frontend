@@ -1,0 +1,2551 @@
+.dashboard-layout {
+  min-height: 100vh;
+  background-color: var(--bg-deep);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.dashboard-header {
+  height: var(--header-height);
+  border-radius: 0 !important;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(13, 13, 20, 0.7);
+  backdrop-filter: blur(12px);
+}
+
+.dash-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+}
+
+/* Marca Integrada de duas linhas */
+.dash-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dash-brand-text-group {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  text-align: left;
+}
+
+.dash-logo-text {
+  font-family: var(--font-title);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.dash-brand-subtitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #c4b5fd;
+  margin-top: 1px;
+}
+
+/* Menu de Usuário Consolidado à Direita */
+.dash-user-menu {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+/* Wrapper do Perfil e Avatar Redondo */
+.user-menu-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.user-avatar-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(138, 63, 252, 0.25);
+}
+
+.user-avatar-btn:hover {
+  transform: scale(1.05);
+  border-color: var(--primary);
+  box-shadow: 0 4px 16px rgba(138, 63, 252, 0.4);
+}
+
+.user-avatar-img {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+}
+
+.user-avatar-initial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Menu Dropdown de Perfil Glassmorphism */
+.user-dropdown-menu {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  width: 220px;
+  background: rgba(13, 13, 20, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 
+    0 10px 25px -5px rgba(0, 0, 0, 0.5),
+    0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  z-index: 200;
+  text-align: left;
+}
+
+.dropdown-user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 4px 8px 4px;
+}
+
+.dropdown-username {
+  font-family: var(--font-title);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.dropdown-email {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 8px 0;
+}
+
+.dropdown-item {
+  width: 100%;
+  background: transparent;
+  border: none;
+  font-family: var(--font-title);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item.logout-item {
+  color: var(--text-secondary);
+}
+
+.dropdown-item.logout-item:hover {
+  background: rgba(255, 56, 96, 0.08);
+  color: #ff5c7c;
+}
+
+/* Grid Layout */
+.dash-content-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 30px;
+  padding-top: 28px;
+  padding-bottom: 50px;
+  flex: 1;
+  margin-top: 16px;
+}
+
+.dash-control-panel {
+  grid-column: span 7;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.dash-visual-preview {
+  grid-column: span 5;
+}
+
+.sticky-preview-container {
+  position: sticky;
+  top: calc(var(--header-height) + 30px);
+}
+
+.preview-section-title {
+  font-size: 1.2rem;
+  margin-bottom: 4px;
+}
+
+.preview-section-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-bottom: 20px;
+}
+
+/* Cards */
+.dash-card {
+  padding: 24px;
+}
+
+.card-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-primary);
+}
+
+.card-desc {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+}
+
+/* Connections */
+.connections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.conn-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  transition: border-color 0.2s ease;
+}
+
+.conn-item.connected {
+  border-color: rgba(0, 242, 254, 0.2);
+  background: rgba(0, 242, 254, 0.02);
+}
+
+.conn-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.platform-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.tt-icon {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.ig-icon {
+  background: linear-gradient(135deg, rgba(214, 41, 118, 0.1) 0%, rgba(247, 119, 55, 0.1) 100%);
+}
+
+.conn-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.conn-status {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.connected .conn-status {
+  color: var(--tiktok-cyan);
+  font-weight: 600;
+}
+
+/* Drag and Drop Area */
+.drag-drop-area {
+  border: 2px dashed var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.drag-drop-area:hover, .drag-drop-area.active {
+  border-color: var(--primary);
+  background: rgba(138, 63, 252, 0.03);
+}
+
+.drag-drop-area.has-file {
+  border-color: var(--success);
+  background: rgba(0, 230, 118, 0.02);
+}
+
+.drag-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.upload-icon {
+  color: var(--text-muted);
+}
+
+.drag-drop-area:hover .upload-icon {
+  color: var(--primary);
+}
+
+.sub-prompt {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.file-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.file-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.change-file-btn {
+  font-size: 0.8rem;
+  color: var(--primary);
+  text-decoration: underline;
+  margin-top: 5px;
+}
+
+/* AI Hashtag Generator */
+.hashtag-generator-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.ai-tag-btn {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  border-radius: 30px;
+  background: rgba(138, 63, 252, 0.15);
+  border-color: rgba(138, 63, 252, 0.3);
+  color: #c4b5fd;
+}
+
+.ai-tag-btn:hover:not(:disabled) {
+  background: rgba(138, 63, 252, 0.25);
+  border-color: var(--primary);
+}
+
+.suggested-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  background: rgba(255,255,255,0.01);
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.tag-pill {
+  background: rgba(0, 242, 254, 0.08);
+  border: 1px solid rgba(0, 242, 254, 0.2);
+  color: var(--tiktok-cyan);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tag-pill:hover {
+  background: rgba(0, 242, 254, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Progress bar */
+.progress-bar-container {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  margin-top: 15px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--tiktok-magenta) 100%);
+  transition: width 0.3s ease;
+}
+
+/* Global messages */
+.global-message {
+  padding: 12px 18px;
+  border-radius: var(--border-radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  border-color: rgba(0, 230, 118, 0.25);
+  background: rgba(0, 230, 118, 0.04);
+}
+
+/* Empty State / Lock */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 60px 40px;
+  color: var(--text-secondary);
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: 20px;
+}
+
+.empty-state h4 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  font-size: 0.85rem;
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+/* Mockup Placeholder (When no TikTok is connected) */
+.mockup-placeholder {
+  width: 320px;
+  height: 640px;
+  margin: 0 auto;
+  border-radius: 40px;
+  border: 10px solid #1a1a24;
+  background: #030307;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.phone-silhouette {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.phone-screen-silhouette {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  max-width: 200px;
+  line-height: 1.5;
+}
+
+.placeholder-icon {
+  color: var(--text-muted);
+}
+
+/* Animations */
+.spin-animation {
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Pulse dot verde ─────────────────────── */
+.pulse-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  margin-right: 6px;
+  animation: pulse-green 2s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+}
+
+@keyframes pulse-green {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+
+/* ─── Platform icons ──────────────────────── */
+.platform-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tt-icon {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.ig-icon {
+  background: linear-gradient(135deg, rgba(247, 119, 55, 0.12), rgba(214, 41, 118, 0.12), rgba(150, 47, 191, 0.12));
+  border: 1px solid rgba(214, 41, 118, 0.15);
+}
+
+/* ─── Connections ─────────────────────────── */
+.connections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.conn-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.3s ease;
+}
+
+.conn-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(138, 63, 252, 0.2);
+}
+
+.conn-item.connected {
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.conn-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.conn-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.conn-status {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.connected .conn-status {
+  color: var(--success);
+}
+
+/* ─── Progress bar ────────────────────────── */
+.progress-bar-container {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  margin-top: 15px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--tiktok-cyan), var(--primary), var(--tiktok-magenta));
+  border-radius: 3px;
+  transition: width 0.5s ease;
+  background-size: 200% 100%;
+  animation: progress-shimmer 2s ease-in-out infinite;
+}
+
+@keyframes progress-shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ─── Global message ──────────────────────── */
+.global-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: rgba(34, 197, 94, 0.06);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: var(--success);
+}
+
+/* ─── Drag area breathing glow ────────────── */
+.drag-drop-area {
+  position: relative;
+}
+
+.drag-drop-area::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  opacity: 0;
+  background: linear-gradient(135deg, var(--tiktok-cyan), var(--primary), var(--tiktok-magenta));
+  z-index: -1;
+  transition: opacity 0.4s ease;
+  filter: blur(8px);
+}
+
+.drag-drop-area.active::after {
+  opacity: 0.3;
+}
+
+/* ─── AJUSTE DE RESPONSIVIDADE EM 1100PX ─── */
+@media (max-width: 1100px) {
+  .dash-content-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    padding-top: 24px;
+  }
+  
+  .dash-control-panel {
+    grid-column: span 12;
+  }
+  
+  .dash-visual-preview {
+    grid-column: span 12;
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .sticky-preview-container {
+    position: relative;
+    top: 0;
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+
+
+
+  .dashboard-header {
+    height: auto;
+    padding: 15px 0;
+  }
+  
+  .dash-header-container {
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+  }
+  
+  .dash-brand {
+    justify-content: center;
+  }
+  
+  .dash-user-menu {
+    justify-content: center;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  
+  .distrib-channels-premium-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* ─── Dashboard Tabs Navigation ───────────── */
+.dash-nav-tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 4px;
+  border-radius: 50px;
+  border: 1px solid var(--border-color);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.dash-tab-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  font-family: var(--font-title);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: 30px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dash-tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.dash-tab-btn.active {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--tiktok-magenta) 100%);
+  color: white;
+  box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+/* ─── Distribution Channels Selection ─────── */
+.distrib-channels-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.channel-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: all 0.25s ease;
+}
+
+.channel-checkbox:hover:not(.disabled) {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(138, 63, 252, 0.25);
+  transform: translateY(-1px);
+}
+
+.channel-checkbox.checked {
+  background: rgba(138, 63, 252, 0.03);
+  border-color: var(--primary);
+  color: var(--text-primary);
+}
+
+.channel-checkbox.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.channel-check-indicator {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 2px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.channel-checkbox.checked .channel-check-indicator {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+/* ─── Switch Toggle Switch ────────────────── */
+.scheduler-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sched-label-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.switch-toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.switch-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.06);
+  transition: .3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 34px;
+  border: 1px solid var(--border-color);
+}
+
+.switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--text-secondary);
+  transition: .3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 50%;
+}
+
+.switch-toggle input:checked + .switch-slider {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+.switch-toggle input:checked + .switch-slider:before {
+  transform: translateX(20px);
+  background-color: white;
+}
+
+.scheduler-panel {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid rgba(138, 63, 252, 0.15) !important;
+  border-radius: var(--border-radius-sm);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+/* ─── Metric Stat Cards ───────────────────── */
+.stat-metric-card {
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.stat-metric-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(138, 63, 252, 0.25);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 15px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* ─── Posts Manager Table ─────────────────── */
+.table-responsive-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: rgba(0,0,0,0.1);
+}
+
+.posts-manager-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.posts-manager-table th {
+  background: rgba(255, 255, 255, 0.01);
+  color: var(--text-secondary);
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.posts-manager-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.posts-manager-table tr:last-child td {
+  border-bottom: none;
+}
+
+.posts-manager-table tr:hover td {
+  background: rgba(255, 255, 255, 0.01);
+}
+
+/* Platform Badges */
+.plat-badge-sm {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.plat-badge-sm.tt-badge {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.plat-badge-sm.ig-badge {
+  background: linear-gradient(135deg, rgba(247, 119, 55, 0.2), rgba(214, 41, 118, 0.2));
+  color: #ff3e6c;
+  border-color: rgba(214, 41, 118, 0.25);
+}
+
+.plat-badge-sm.yt-badge {
+  background: rgba(255, 0, 0, 0.1);
+  color: #ff0000;
+  border-color: rgba(255, 0, 0, 0.25);
+}
+
+/* Status Badges */
+.status-badge-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 50px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid transparent;
+}
+
+.status-badge-pill.success {
+  background: rgba(34, 197, 94, 0.08);
+  color: var(--success);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.status-badge-pill.scheduled {
+  background: rgba(138, 63, 252, 0.08);
+  color: #c4b5fd;
+  border-color: rgba(138, 63, 252, 0.25);
+}
+
+/* Table Actions */
+.btn-action-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-action-icon:hover {
+  background: rgba(255, 56, 96, 0.1);
+  color: #ff5c7c;
+  border-color: rgba(255, 56, 96, 0.2);
+  transform: scale(1.05);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   ESTILOS ADICIONAIS: STEPPER, MODAL, BOTÕES PREMIUM E RESPONSIVIDADE (1100px)
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Indicador de Contas Vinculadas no Header */
+.header-connections-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 4px 12px;
+  border-radius: 40px;
+  border: 1px solid var(--border-color);
+  margin-right: 5px;
+}
+
+.indicator-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+  margin-right: 4px;
+}
+
+.platform-header-badge {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.platform-header-badge:hover {
+  transform: translateY(-2px);
+  color: #fff;
+  border-color: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Cores de Marca para Badges no Header */
+.tt-header-badge.connected {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+}
+
+.ig-header-badge.connected {
+  background: linear-gradient(135deg, rgba(247, 119, 55, 0.15), rgba(214, 41, 118, 0.15));
+  border-color: rgba(214, 41, 118, 0.3);
+  color: #ff3e6c;
+  box-shadow: 0 0 10px rgba(214, 41, 118, 0.1);
+}
+
+.yt-header-badge.connected {
+  background: rgba(255, 0, 0, 0.1);
+  border-color: rgba(255, 0, 0, 0.25);
+  color: #ff0000;
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.1);
+}
+
+/* Pontinhos de Status das Redes */
+.platform-header-badge .status-dot {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid var(--bg-deep);
+}
+
+.platform-header-badge .status-dot.active {
+  background: var(--success);
+  box-shadow: 0 0 4px var(--success);
+}
+
+.platform-header-badge .status-dot.inactive {
+  background: var(--text-muted);
+}
+
+/* ─── MODAL DE CONEXÕES (Glassmorphism Centralizado) ─── */
+.modal-overlay-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-overlay-bg {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 4, 7, 0.85);
+  backdrop-filter: blur(8px);
+}
+
+.connections-modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  background: rgba(13, 13, 20, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 20px !important;
+  padding: 28px !important;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.7),
+    0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 15px;
+}
+
+.modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-title {
+  font-family: var(--font-title);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.modal-close-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  transform: rotate(90deg);
+}
+
+/* ─── STEPPER PROGRESS BAR (EDITOR DE CONTEÚDO) ─── */
+.stepper-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.015);
+  padding: 6px 16px;
+  border-radius: 40px;
+  border: 1px solid var(--border-color);
+}
+
+.step-indicator {
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-title);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px 0;
+  transition: all 0.25s ease;
+}
+
+.step-indicator:disabled {
+  cursor: not-allowed;
+}
+
+.step-num {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  transition: all 0.25s ease;
+}
+
+.step-indicator.active {
+  color: var(--text-primary);
+}
+
+.step-indicator.active .step-num {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  box-shadow: 0 0 10px rgba(138, 63, 252, 0.4);
+}
+
+.step-indicator.completed {
+  color: var(--success);
+}
+
+.step-indicator.completed .step-num {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.step-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+  margin: 0 15px;
+  transition: all 0.3s ease;
+}
+
+.step-line.active {
+  background: linear-gradient(90deg, var(--primary), rgba(34,197,94,0.5));
+}
+
+/* ─── MINI BARRA DE VÍDEO (Etapa 2 - Destaque Reduzido) ─── */
+.compact-video-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  transition: border-color 0.25s ease;
+}
+
+.compact-video-bar:hover {
+  border-color: rgba(255,255,255,0.12);
+}
+
+.compact-video-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.compact-video-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(138, 63, 252, 0.1);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.compact-video-text {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  text-align: left;
+}
+
+.compact-video-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.compact-video-size {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.compact-video-change-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.compact-video-change-btn:hover {
+  background: rgba(255,255,255,0.04);
+  color: var(--text-primary);
+  border-color: rgba(255,255,255,0.2);
+}
+
+/* ─── SELETOR DE REDES SOCIAIS PREMIUM (Fileira Horizontal Lado a Lado) ─── */
+.distrib-channels-premium-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.premium-channel-btn {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.01);
+}
+
+.premium-channel-btn:hover:not(.unconnected) {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Conectado e Selecionado */
+.premium-channel-btn.selected {
+  background: rgba(138, 63, 252, 0.03);
+  border-color: var(--primary);
+  box-shadow: 
+    0 10px 20px -5px rgba(138, 63, 252, 0.1),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* TikTok Especial Selecionado */
+.premium-channel-btn.selected:has(.tt-glow) {
+  border-color: rgba(0, 242, 254, 0.6);
+  background: rgba(0, 242, 254, 0.02);
+  box-shadow: 
+    0 10px 20px -5px rgba(0, 242, 254, 0.08),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Instagram Especial Selecionado */
+.premium-channel-btn.selected:has(.ig-glow) {
+  border-color: #d62976;
+  background: rgba(214, 41, 118, 0.02);
+  box-shadow: 
+    0 10px 20px -5px rgba(214, 41, 118, 0.08),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* YouTube Especial Selecionado */
+.premium-channel-btn.selected:has(.yt-glow) {
+  border-color: #ff0000;
+  background: rgba(255, 0, 0, 0.02);
+  box-shadow: 
+    0 10px 20px -5px rgba(255, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Desconectado (Opaco / Indisponível) */
+.premium-channel-btn.unconnected {
+  background: rgba(255, 255, 255, 0.01);
+  border-color: rgba(255, 255, 255, 0.04);
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.premium-channel-btn.unconnected .channel-icon-wrapper {
+  background: rgba(255,255,255,0.02);
+  border-color: rgba(255,255,255,0.04);
+  color: var(--text-muted);
+}
+
+/* Ícones das Redes e Brilho das Conexões */
+.channel-icon-wrapper {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+
+.premium-channel-btn.selected .channel-icon-wrapper {
+  color: #fff;
+}
+
+.tt-glow {
+  background: rgba(255,255,255,0.04);
+}
+.selected .tt-glow {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-color: rgba(255,255,255,0.2);
+}
+
+.ig-glow {
+  background: rgba(214, 41, 118, 0.05);
+  color: #d62976;
+}
+.selected .ig-glow {
+  background: linear-gradient(135deg, rgba(247, 119, 55, 0.2), rgba(214, 41, 118, 0.2));
+  border-color: rgba(214, 41, 118, 0.3);
+  color: #ff3e6c;
+}
+
+.yt-glow {
+  background: rgba(255, 0, 0, 0.05);
+  color: #ff0000;
+}
+.selected .yt-glow {
+  background: rgba(255, 0, 0, 0.15);
+  border-color: rgba(255, 0, 0, 0.3);
+  color: #ff3333;
+}
+
+/* Detalhes de Texto no Botão */
+.channel-btn-details {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.channel-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.channel-subtitle {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 1px;
+}
+
+/* Indicadores de Selecionado e Tags */
+.channel-status-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.indicator-checked {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.premium-channel-btn:has(.tt-glow).selected .indicator-checked {
+  background: var(--tiktok-cyan);
+  color: #000;
+}
+
+.premium-channel-btn:has(.ig-glow).selected .indicator-checked {
+  background: #d62976;
+}
+
+.premium-channel-btn:has(.yt-glow).selected .indicator-checked {
+  background: #ff0000;
+}
+
+.indicator-unchecked {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background: rgba(0,0,0,0.1);
+}
+
+.premium-badge-unconnected {
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(255,255,255,0.03);
+  color: var(--text-muted);
+  border: 1px solid rgba(255,255,255,0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+/* Sub-Header da Área de Trabalho (Organização de Espaço) */
+.workspace-sub-header {
+  grid-column: span 12;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  background: rgba(20, 20, 31, 0.4);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  margin-bottom: 5px;
+  backdrop-filter: blur(12px);
+  box-shadow: 
+    0 4px 30px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+@media (max-width: 1100px) {
+  .workspace-sub-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    padding: 16px;
+    width: 100%;
+  }
+}
+
+/* ─── SIDEBAR UNIFICADO DO MOCKUP (Bolhas + Labels + Modos Verticais Colados) ─── */
+.mockup-sidebar-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+  z-index: 10;
+  width: 110px;
+  min-width: 110px;
+  flex-shrink: 0;
+}
+
+/* Cada plataforma: bolha + modos lado a lado */
+.sidebar-platform-item {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+/* ─── Bolha Envolvente da Plataforma ─── */
+.sidebar-bubble {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 7px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-bubble:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Quando ativa, borda direita some para colar na strip */
+.sidebar-bubble.active {
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+  border-right: 1px solid transparent;
+}
+
+/* Bolha Ativa - TikTok */
+.sidebar-bubble.tt-bubble.active {
+  background: linear-gradient(180deg, rgba(0, 242, 254, 0.06) 0%, rgba(138, 63, 252, 0.06) 100%);
+  border-color: rgba(0, 242, 254, 0.25);
+  border-right: 1px solid transparent;
+  box-shadow:
+    0 0 16px rgba(0, 242, 254, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* Bolha Ativa - Instagram */
+.sidebar-bubble.ig-bubble.active {
+  background: linear-gradient(180deg, rgba(247, 119, 55, 0.06) 0%, rgba(214, 41, 118, 0.06) 100%);
+  border-color: rgba(214, 41, 118, 0.25);
+  border-right: 1px solid transparent;
+  box-shadow:
+    0 0 16px rgba(214, 41, 118, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* Bolha Ativa - YouTube */
+.sidebar-bubble.yt-bubble.active {
+  background: rgba(255, 0, 0, 0.04);
+  border-color: rgba(255, 0, 0, 0.22);
+  border-right: 1px solid transparent;
+  box-shadow:
+    0 0 16px rgba(255, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* ─── Botão de Ícone da Rede ─── */
+.sidebar-icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.sidebar-icon-btn:hover {
+  transform: scale(1.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Ícone Ativo por Marca */
+.sidebar-icon-btn.tt-icon-btn.active {
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.2) 0%, rgba(138, 63, 252, 0.2) 100%);
+  border-color: rgba(0, 242, 254, 0.5);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.15);
+}
+
+.sidebar-icon-btn.ig-icon-btn.active {
+  background: linear-gradient(135deg, rgba(247, 119, 55, 0.2) 0%, rgba(214, 41, 118, 0.2) 100%);
+  border-color: rgba(214, 41, 118, 0.5);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(214, 41, 118, 0.15);
+}
+
+.sidebar-icon-btn.yt-icon-btn.active {
+  background: rgba(255, 0, 0, 0.18);
+  border-color: rgba(255, 0, 0, 0.5);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(255, 0, 0, 0.15);
+}
+
+/* ─── Label Vertical da Plataforma ─── */
+.sidebar-platform-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  font-family: var(--font-title);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 10px 0 4px 0;
+  overflow: hidden;
+}
+
+.sidebar-platform-label.tt-label {
+  color: var(--tiktok-cyan);
+  text-shadow: 0 0 8px rgba(0, 242, 254, 0.15);
+}
+
+.sidebar-platform-label.ig-label {
+  background: linear-gradient(180deg, #f77737 0%, #d62976 50%, #962fbf 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.sidebar-platform-label.yt-label {
+  color: #ff3333;
+  text-shadow: 0 0 8px rgba(255, 0, 0, 0.15);
+}
+
+/* ─── Strip de Modos Verticais (Colada ao lado da bolha, mesma altura) ─── */
+.sidebar-modes-strip {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 5px 4px;
+  border-radius: 0 12px 12px 0;
+  background: rgba(13, 13, 20, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-left: none;
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+  align-self: stretch;
+  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.2);
+  margin-left: -1px;
+}
+
+/* Cores da strip por marca */
+.sidebar-modes-strip.tt-strip {
+  border-color: rgba(0, 242, 254, 0.15);
+  background: linear-gradient(180deg, rgba(0, 242, 254, 0.03) 0%, rgba(138, 63, 252, 0.03) 100%);
+}
+
+.sidebar-modes-strip.ig-strip {
+  border-color: rgba(214, 41, 118, 0.15);
+  background: linear-gradient(180deg, rgba(247, 119, 55, 0.03) 0%, rgba(214, 41, 118, 0.03) 100%);
+}
+
+.sidebar-modes-strip.yt-strip {
+  border-color: rgba(255, 0, 0, 0.15);
+  background: rgba(255, 0, 0, 0.03);
+}
+
+/* Botão de Modo Vertical (texto vertical) */
+.sidebar-mode-vbtn {
+  background: transparent;
+  border: none;
+  font-family: var(--font-title);
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 8px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-mode-vbtn:hover:not(.active) {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Modo Ativo - TikTok */
+.sidebar-mode-vbtn.active.tt-mode {
+  background: rgba(0, 242, 254, 0.1);
+  color: var(--tiktok-cyan);
+  box-shadow: 0 0 6px rgba(0, 242, 254, 0.06);
+  text-shadow: 0 0 6px rgba(0, 242, 254, 0.2);
+}
+
+/* Modo Ativo - Instagram */
+.sidebar-mode-vbtn.active.ig-mode {
+  background: rgba(214, 41, 118, 0.1);
+  color: #ff3e6c;
+  box-shadow: 0 0 6px rgba(214, 41, 118, 0.06);
+  text-shadow: 0 0 6px rgba(214, 41, 118, 0.2);
+}
+
+/* Modo Ativo - YouTube */
+.sidebar-mode-vbtn.active.yt-mode {
+  background: rgba(255, 0, 0, 0.1);
+  color: #ff3333;
+  box-shadow: 0 0 6px rgba(255, 0, 0, 0.06);
+  text-shadow: 0 0 6px rgba(255, 0, 0, 0.2);
+}
+
+/* ─── Responsividade do Sidebar (1100px) ─── */
+@media (max-width: 1100px) {
+  .mockup-sidebar-control {
+    flex-direction: row !important;
+    position: relative !important;
+    top: 0 !important;
+    gap: 6px;
+    justify-content: center;
+    min-width: auto !important;
+    width: auto !important;
+    flex-wrap: wrap;
+  }
+  
+  .sidebar-platform-item {
+    flex-direction: row;
+  }
+
+  .sidebar-bubble {
+    flex-direction: row;
+    border-radius: 30px;
+    padding: 6px 10px;
+  }
+
+  .sidebar-bubble.active {
+    border-top-right-radius: 30px;
+    border-bottom-right-radius: 4px;
+    border-right-color: transparent;
+  }
+  
+  .sidebar-platform-label {
+    writing-mode: horizontal-tb;
+    transform: none;
+    padding: 0 0 0 4px;
+    font-size: 0.58rem;
+  }
+  
+  .sidebar-modes-strip {
+    flex-direction: row;
+    border-radius: 0 0 14px 14px;
+    border-left: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: none;
+    padding: 4px 6px;
+  }
+
+  .sidebar-mode-vbtn {
+    writing-mode: horizontal-tb;
+    transform: none;
+    padding: 5px 8px;
+    font-size: 0.58rem;
+  }
+}
+
+/* ─── SISTEMA DE NOTIFICAÇÕES (BELL & DROPDOWN) ─────────────────────── */
+.notifications-menu-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.notifications-bell-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.01);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.notifications-bell-btn:hover {
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-1px);
+}
+
+.notifications-badge-pulse {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: var(--tiktok-magenta);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 800;
+  min-width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 1px solid var(--bg-deep);
+  box-shadow: 0 0 8px rgba(255, 0, 80, 0.6);
+  animation: bell-bounce 0.5s ease infinite alternate;
+}
+
+@keyframes bell-bounce {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-2px); }
+}
+
+.notifications-dropdown-menu {
+  position: absolute;
+  top: 48px;
+  right: -40px;
+  width: 320px;
+  background: rgba(13, 13, 20, 0.96) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 
+    0 15px 35px -5px rgba(0, 0, 0, 0.6),
+    0 0 1px rgba(255, 255, 255, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  z-index: 250;
+}
+
+.notifications-dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notif-title {
+  font-family: var(--font-title);
+  font-size: 0.95rem;
+  font-weight: 750;
+  color: var(--text-primary);
+}
+
+.clear-all-btn {
+  background: transparent;
+  border: none;
+  color: var(--tiktok-magenta);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.clear-all-btn:hover {
+  background: rgba(255, 0, 80, 0.08);
+}
+
+.notifications-list-container {
+  max-height: 250px;
+  overflow-y: auto;
+  margin-top: 8px;
+  padding-right: 2px;
+}
+
+/* Scrollbar personalizada */
+.notifications-list-container::-webkit-scrollbar {
+  width: 4px;
+}
+.notifications-list-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.notifications-list-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+}
+
+.no-notifications-state {
+  padding: 30px 10px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.notif-dropdown-item {
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  transition: all 0.2s ease;
+}
+
+.notif-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.notif-dropdown-item.unread {
+  border-left: 3px solid var(--primary);
+  background: rgba(138, 63, 252, 0.02);
+}
+
+.notif-dropdown-item.sending {
+  border-left: 3px solid var(--tiktok-cyan);
+  background: rgba(0, 242, 254, 0.02);
+}
+
+.notif-dropdown-item.error {
+  border-left: 3px solid var(--error);
+  background: rgba(255, 56, 96, 0.02);
+}
+
+.notif-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.notif-item-title-text {
+  font-family: var(--font-title);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.notif-delete-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.notif-delete-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.notif-item-message {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: 4px 0;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.notif-item-time {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  display: block;
+  text-align: left;
+  margin-top: 2px;
+}
+
+.notifications-dropdown-footer {
+  display: flex;
+  justify-content: center;
+  padding-top: 10px;
+}
+
+.clear-old-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+.clear-old-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255,255,255,0.04);
+}
+
+
+/* ─── GRID DE CARDS VISUAIS DE POSTS ───────────────────────────────── */
+.posts-manager-header-visual {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding-bottom: 20px;
+}
+
+.manager-title-group {
+  text-align: left;
+}
+
+.posts-visual-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 20px;
+  margin-top: 10px;
+}
+
+.post-visual-card {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.post-visual-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(138, 63, 252, 0.25);
+  box-shadow: 
+    0 12px 20px -10px rgba(0, 0, 0, 0.5),
+    0 0 12px rgba(138, 63, 252, 0.08);
+}
+
+.post-card-cover-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9/13; /* Proporção perfeita vertical de recap */
+  background: #09090f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.post-card-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.post-visual-card:hover .post-card-cover-img {
+  transform: scale(1.04);
+}
+
+.post-card-cover-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(13, 13, 20, 0.9) 0%, rgba(26, 21, 44, 0.9) 100%);
+}
+
+.fallback-text {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+/* OVERLAY DE RELÓGIO PULSANTE (AGENDADO) */
+.post-card-scheduled-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(13, 13, 20, 0.78);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 10;
+  backdrop-filter: blur(2px);
+}
+
+.overlay-clock-wrapper {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(138, 63, 252, 0.15);
+  border: 1px solid rgba(138, 63, 252, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  box-shadow: 0 0 15px rgba(138, 63, 252, 0.2);
+}
+
+.pulsing-clock {
+  animation: clock-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes clock-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.92); }
+}
+
+.overlay-scheduled-label {
+  font-family: var(--font-title);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #c4b5fd;
+  text-shadow: 0 0 10px rgba(138, 63, 252, 0.3);
+}
+
+/* Badges de Status e Plataformas */
+.post-card-status-badge {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  z-index: 15;
+  letter-spacing: 0.04em;
+}
+
+.post-card-status-badge.success {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #4ade80;
+}
+
+.post-card-status-badge.scheduled {
+  background: rgba(138, 63, 252, 0.18);
+  border: 1px solid rgba(138, 63, 252, 0.3);
+  color: #c4b5fd;
+}
+
+.post-card-platforms-badges {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 6px;
+  z-index: 15;
+}
+
+.card-plat-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.card-plat-badge.card-tt {
+  background: #000;
+}
+.card-plat-badge.card-ig {
+  background: linear-gradient(135deg, #f77737 0%, #d62976 100%);
+}
+.card-plat-badge.card-yt {
+  background: #ff0000;
+}
+
+/* Informações do Card */
+.post-card-info {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  flex: 1;
+}
+
+.post-card-caption-text {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.45;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  margin: 0;
+  min-height: 2.9em;
+}
+
+.post-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  border-top: 1px solid rgba(255,255,255,0.03);
+  padding-top: 10px;
+}
+
+.post-card-date-label {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.post-card-delete-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.post-card-delete-btn:hover {
+  color: #ff5c7c;
+  background: rgba(255, 56, 96, 0.08);
+}
+
+
+/* ─── FILTROS DO GERENCIADOR DE FILA ───────────────────────────────── */
+.filters-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.filter-buttons {
+  display: flex;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  padding: 3px;
+  border-radius: 30px;
+}
+
+.filter-buttons .filter-btn {
+  background: transparent;
+  border: none;
+  font-family: var(--font-title);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  height: 26px;
+}
+
+.filter-buttons .filter-btn:hover:not(.active) {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.filter-buttons .filter-btn.active {
+  background: rgba(138, 63, 252, 0.12);
+  border: 1px solid rgba(138, 63, 252, 0.25);
+  color: #c4b5fd;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.no-posts-found-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+  width: 100%;
+}
+
+.no-posts-found-state p {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  opacity: 0.7;
+  margin-top: 4px;
+}
+
+/* ─── OVERLAY DE UPLOAD DIRECT EM CARDS DA GRADE (CONCORRENTE) ───────── */
+.post-card-upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(13, 11, 23, 0.86);
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  z-index: 5;
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.post-card-upload-overlay.error {
+  background: rgba(26, 12, 21, 0.92);
+}
+
+.upload-overlay-icon {
+  color: var(--accent);
+}
+
+.upload-overlay-icon.error {
+  color: #f43f5e;
+}
+
+.upload-overlay-title {
+  font-family: var(--font-title);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.upload-overlay-title.error {
+  color: #fca5a5;
+}
+
+.upload-overlay-percent {
+  font-family: var(--font-title);
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--accent);
+  text-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+  margin-top: -2px;
+}
+
+.upload-overlay-progress-container {
+  width: 80%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.upload-overlay-progress-bar {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.upload-overlay-retry-btn {
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  color: #fda4af;
+  padding: 6px 14px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: var(--font-title);
+  text-transform: uppercase;
+  margin-top: 6px;
+  letter-spacing: 0.02em;
+}
+
+.upload-overlay-retry-btn:hover {
+  background: rgba(244, 63, 94, 0.25);
+  border-color: rgba(244, 63, 94, 0.45);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.2);
+}
+
+/* Badges de Status no Canto do Card */
+.post-card-status-badge.uploading {
+  background: rgba(0, 242, 254, 0.12);
+  border-color: rgba(0, 242, 254, 0.25);
+  color: #a5f3fc;
+}
+
+.post-card-status-badge.error {
+  background: rgba(244, 63, 94, 0.15);
+  border-color: rgba(244, 63, 94, 0.25);
+  color: #fecdd3;
+}
+
+/* Bordas de Cards ativas por status */
+.post-visual-card.uploading {
+  border-color: rgba(0, 242, 254, 0.15) !important;
+}
+
+.post-visual-card.upload-error {
+  border-color: rgba(244, 63, 94, 0.2) !important;
+}
+
+
+
+
+
