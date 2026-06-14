@@ -31,6 +31,9 @@ export default function Login() {
   // Estado do controle de aprovação de segurança
   const [approvalPending, setApprovalPending] = useState(false);
   const [pendingEmail, setPendingEmail] = useState('');
+  
+  // Estado para consentimento de termos de privacidade/serviço
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const checkUserApproval = async (userEmail, uid) => {
     try {
@@ -80,6 +83,11 @@ export default function Login() {
       } else if (isSignUp) {
         if (!name.trim() || !phone.trim()) {
           setErrorMessage('Nome e Telefone são obrigatórios para cadastro.');
+          setLoading(false);
+          return;
+        }
+        if (!acceptedTerms) {
+          setErrorMessage('Você precisa ler e aceitar os Termos de Serviço e a Política de Privacidade.');
           setLoading(false);
           return;
         }
@@ -335,6 +343,21 @@ export default function Login() {
               </div>
             </div>
           )}
+          
+          {isSignUp && (
+            <div className="terms-checkbox-group">
+              <input 
+                type="checkbox" 
+                id="acceptedTerms" 
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                required
+              />
+              <label htmlFor="acceptedTerms">
+                Li e aceito os <Link to="/terms" target="_blank">Termos de Serviço</Link> e a <Link to="/privacy" target="_blank">Política de Privacidade</Link> / I agree to the <Link to="/terms" target="_blank">Terms of Service</Link> and <Link to="/privacy" target="_blank">Privacy Policy</Link>
+              </label>
+            </div>
+          )}
 
           <button type="submit" className="glow-btn" style={{ width: '100%', justifyContent: 'center', marginTop: '10px' }} disabled={loading}>
             {loading ? 'Aguarde...' : (forgotPassword ? 'Enviar Link' : (isSignUp ? 'Registrar-se' : 'Entrar'))}
@@ -369,7 +392,12 @@ export default function Login() {
               {isSignUp ? 'Já possui uma conta?' : 'Não possui uma conta?'}
               <button 
                 className="link-btn" 
-                onClick={() => { setIsSignUp(!isSignUp); setErrorMessage(''); setSuccessMessage(''); }}
+                onClick={() => { 
+                  setIsSignUp(!isSignUp); 
+                  setErrorMessage(''); 
+                  setSuccessMessage(''); 
+                  setAcceptedTerms(false);
+                }}
                 style={{ marginLeft: '6px', fontWeight: '600' }}
               >
                 {isSignUp ? 'Entrar' : 'Cadastre-se'}

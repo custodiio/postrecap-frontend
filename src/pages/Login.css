@@ -198,3 +198,39 @@
   justify-content: center;
   margin: 0 auto 20px auto;
 }
+
+/* Terms Checkbox Group */
+.terms-checkbox-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+  margin-top: 5px;
+}
+
+.terms-checkbox-group input[type="checkbox"] {
+  margin-top: 3px;
+  cursor: pointer;
+  accent-color: var(--primary);
+  width: 16px;
+  height: 16px;
+}
+
+.terms-checkbox-group label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  cursor: pointer;
+  user-select: none;
+}
+
+.terms-checkbox-group label a {
+  color: var(--tiktok-cyan);
+  text-decoration: underline;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.terms-checkbox-group label a:hover {
+  color: var(--primary);
+}

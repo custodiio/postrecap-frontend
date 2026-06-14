@@ -64,7 +64,9 @@ export default function LandingPage() {
           </nav>
           <div className="nav-actions">
             <Link to="/login" className="glow-btn">
-              Começar Agora <ArrowRight size={16} />
+              <span className="btn-text-desktop">Começar Agora</span>
+              <span className="btn-text-mobile">Entrar</span>
+              <ArrowRight size={16} className="btn-arrow" />
             </Link>
           </div>
         </div>
@@ -318,51 +320,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Seção de Contato */}
-      <section id="contact" className="contact-section">
-        <div className="max-width-container">
-          <ScrollReveal animation="fadeUp">
-            <div className="contact-container">
-              <div className="section-header">
-                <h2 className="section-title">Entre em Contato</h2>
-                <p className="section-subtitle">
-                  Tem alguma dúvida, feedback ou sugestão? Entre em contato diretamente pelos canais oficiais abaixo.
-                </p>
-              </div>
-              <div className="contact-grid">
-                <a href="mailto:contato@postrecap.tech" className="contact-card glass-panel">
-                  <div className="contact-icon-wrapper">
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect width="20" height="16" x="2" y="4" rx="2" />
-                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                    </svg>
-                  </div>
-                  <h3 className="contact-card-title">E-mail Direto</h3>
-                  <p className="contact-card-value">contato@postrecap.tech</p>
-                  <span className="contact-card-action">
-                    Enviar mensagem <ArrowRight size={14} />
-                  </span>
-                </a>
-
-                <a href="https://github.com/custodiio" target="_blank" rel="noopener noreferrer" className="contact-card glass-panel">
-                  <div className="contact-icon-wrapper">
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.0" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
-                      <path d="M9 18c-4.51 2-5-2-7-2" />
-                    </svg>
-                  </div>
-                  <h3 className="contact-card-title">GitHub Oficial</h3>
-                  <p className="contact-card-value">github.com/custodiio</p>
-                  <span className="contact-card-action">
-                    Ver perfil <ArrowRight size={14} />
-                  </span>
-                </a>
-              </div>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
-
       {/* Rodapé */}
       <footer className="footer-section">
         <ScrollReveal animation="fadeUp">
@@ -376,24 +333,28 @@ export default function LandingPage() {
                 Ferramenta avançada de visualização de retenção e agendamento de posts. Desenvolvido para criadores de sucesso.
               </p>
             </div>
+            
             <div className="footer-links-group">
               <h4>Legal</h4>
               <Link to="/terms">Termos de Serviço</Link>
               <Link to="/privacy">Políticas de Privacidade</Link>
             </div>
+
+            <div className="footer-links-group">
+              <h4>Contato</h4>
+              <a href="mailto:contato@postrecap.tech">contato@postrecap.tech</a>
+              <a href="https://github.com/custodiio" target="_blank" rel="noopener noreferrer">GitHub Oficial</a>
+            </div>
+            
             <div className="footer-links-group">
               <h4>API Integrations</h4>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                TikTok Developer App ID: SB Sandbox App
-              </span>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                Instagram Graph API Verified Client
-              </span>
+              <span className="footer-api-info">TikTok Developer App ID: SB Sandbox App</span>
+              <span className="footer-api-info">Instagram Graph API Verified Client</span>
             </div>
           </div>
         </ScrollReveal>
         <div className="footer-bottom">
-          <p>&copy; {new Date().getFullYear()} Post Recap (animesrecaps.me). Todos os direitos reservados.</p>
+          <p>&copy; {new Date().getFullYear()} Post Recap (postrecap.tech). Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>
