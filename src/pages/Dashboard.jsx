@@ -88,6 +88,19 @@ export default function Dashboard() {
   const [tiktokUsername, setTiktokUsername] = useState('');
   const [tiktokAvatar, setTiktokAvatar] = useState('');
   
+  // Estados de Conformidade com UX do TikTok
+  const [tiktokNickname, setTiktokNickname] = useState('');
+  const [creatorInfo, setCreatorInfo] = useState(null);
+  const [tiktokPrivacy, setTiktokPrivacy] = useState('');
+  const [tiktokComment, setTiktokComment] = useState(false);
+  const [tiktokDuet, setTiktokDuet] = useState(false);
+  const [tiktokStitch, setTiktokStitch] = useState(false);
+  const [commercialDisclosure, setCommercialDisclosure] = useState(false);
+  const [promoteYourBrand, setPromoteYourBrand] = useState(false);
+  const [promoteBrandedContent, setPromoteBrandedContent] = useState(false);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [simulatedLimitReached, setSimulatedLimitReached] = useState(false);
+  
   // Estados para Debug/Diagnóstico da API do TikTok
   const [debugResponse, setDebugResponse] = useState(null);
   const [isDebugLoading, setIsDebugLoading] = useState(false);
@@ -316,6 +329,23 @@ export default function Dashboard() {
     });
   };
 
+  const getTiktokCreatorInfo = async (email) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/tiktok/creator-info?email=${email}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCreatorInfo(data);
+        setTiktokNickname(data.creator_nickname);
+        // Se as configurações do criador desativam as interações globalmente, desabilita/desmarca:
+        if (data.comment_disabled) setTiktokComment(false);
+        if (data.duet_disabled) setTiktokDuet(false);
+        if (data.stitch_disabled) setTiktokStitch(false);
+      }
+    } catch (err) {
+      console.error("Erro ao obter informações do criador do TikTok:", err);
+    }
+  };
+
   const checkTiktokConnection = async (email) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/tiktok/status?email=${email}`);
@@ -328,6 +358,7 @@ export default function Dashboard() {
           if (!selectedPlatforms.includes('tiktok')) {
             setSelectedPlatforms(prev => [...prev, 'tiktok']);
           }
+          await getTiktokCreatorInfo(email);
         }
       }
     } catch (err) { console.error("Erro ao obter status do TikTok:", err); }
@@ -458,6 +489,26 @@ export default function Dashboard() {
     
     // Extrai e gera a capa (thumbnail) real do vídeo em Base64
     generateVideoThumbnail(file);
+
+    // Carregar e ler a duração do vídeo
+    const tempVideo = document.createElement('video');
+    tempVideo.preload = 'metadata';
+    tempVideo.onloadedmetadata = () => {
+      setVideoDuration(tempVideo.duration);
+      console.log("Duração do vídeo detectada:", tempVideo.duration, "segundos");
+    };
+    tempVideo.src = url;
+  };
+
+  const handleNextStep = () => {
+    // Validação de duração máxima para o TikTok
+    if (selectedPlatforms.includes('tiktok') && creatorInfo && creatorInfo.max_video_post_duration_sec) {
+      if (videoDuration > creatorInfo.max_video_post_duration_sec) {
+        alert(`O vídeo selecionado tem ${Math.round(videoDuration)}s de duração, o que excede o limite máximo permitido de ${creatorInfo.max_video_post_duration_sec}s para esta conta do TikTok.`);
+        return;
+      }
+    }
+    setCreationStep(2);
   };
 
   const handleSuggestTags = async () => {
@@ -499,6 +550,36 @@ export default function Dashboard() {
     e.preventDefault();
     if (!videoFile) { alert("Selecione um arquivo de vídeo."); return; }
     if (isScheduled && !scheduleDateTime) { alert("Por favor, selecione uma data e horário válidos para o agendamento."); return; }
+
+    // Validações obrigatórias da API de Postagem Direta do TikTok
+    if (selectedPlatforms.includes('tiktok')) {
+      if (simulatedLimitReached || (creatorInfo && !creatorInfo.can_post)) {
+        alert("A API do TikTok indica que o criador não pode fazer mais postagens neste momento (limite atingido). Tente novamente mais tarde.");
+        return;
+      }
+      if (creatorInfo && creatorInfo.max_video_post_duration_sec && videoDuration > creatorInfo.max_video_post_duration_sec) {
+        alert(`A duração do vídeo (${Math.round(videoDuration)}s) excede o limite máximo permitido pelo TikTok (${creatorInfo.max_video_post_duration_sec}s).`);
+        return;
+      }
+      
+      // Validações de Conteúdo Comercial
+      if (commercialDisclosure) {
+        if (!promoteYourBrand && !promoteBrandedContent) {
+          alert("Você precisa indicar se seu conteúdo promove a si mesmo, a um terceiro ou ambos (Conteúdo Comercial ativo).");
+          return;
+        }
+        if (promoteBrandedContent && tiktokPrivacy === 'SELF_ONLY') {
+          alert("A visibilidade de conteúdo de marca não pode ser configurada como privada.");
+          return;
+        }
+      }
+
+      // Validação de Privacidade (Deve ser selecionada manualmente)
+      if (!tiktokPrivacy) {
+        alert("Por favor, selecione manualmente o status de privacidade do seu post do TikTok.");
+        return;
+      }
+    }
 
     // Salva os dados localmente para que a Promise de background possa acessá-los após limparmos a interface
     const bgVideoFile = videoFile;
@@ -557,9 +638,17 @@ export default function Dashboard() {
     setIsScheduled(false);
     setScheduleDateTime('');
     setCreationStep(1);
+    setTiktokPrivacy('');
+    setTiktokComment(false);
+    setTiktokDuet(false);
+    setTiktokStitch(false);
+    setCommercialDisclosure(false);
+    setPromoteYourBrand(false);
+    setPromoteBrandedContent(false);
+    setVideoDuration(0);
     
-    setUploadMessage('Seu vídeo está sendo enviado em background! Você pode acompanhar o progresso real na aba Fila & Analytics.');
-    setTimeout(() => setUploadMessage(''), 6000);
+    setUploadMessage('Seu vídeo está sendo enviado em background! Você pode acompanhar o progresso real na aba Fila & Analytics. Atenção: após a conclusão do envio, pode levar alguns minutos para que o TikTok processe o conteúdo e o torne visível em seu perfil.');
+    setTimeout(() => setUploadMessage(''), 8000);
 
     // 7. Dispara a Promise em background de forma assíncrona (suporta múltiplas requisições paralelas)
     (async () => {
@@ -570,6 +659,10 @@ export default function Dashboard() {
         formData.append('title', bgCaption);
         formData.append('video', bgVideoFile);
         formData.append('post_id', postId); // OBRIGATÓRIO: envia o post_id para o backend rastrear o status real!
+        formData.append('privacy_level', tiktokPrivacy);
+        formData.append('disable_comment', !tiktokComment);
+        formData.append('disable_duet', !tiktokDuet);
+        formData.append('disable_stitch', !tiktokStitch);
 
         try {
           const uploadPromise = () => new Promise((resolve, reject) => {
@@ -730,6 +823,20 @@ export default function Dashboard() {
       }
     })();
   };
+
+  const getConsentStatement = () => {
+    if (!selectedPlatforms.includes('tiktok')) return null;
+    if (commercialDisclosure) {
+      if (promoteBrandedContent) {
+        return "Ao postar, você concorda com a Política de Conteúdo de Marca do TikTok e a Confirmação de Uso de Música.";
+      }
+      return "Ao postar, você concorda com a Confirmação de Uso de Música do TikTok.";
+    }
+    return "Ao postar, você concorda com a Confirmação de Uso de Música do TikTok.";
+  };
+
+  const isPublishDisabled = selectedPlatforms.length === 0 || 
+    (selectedPlatforms.includes('tiktok') && commercialDisclosure && !promoteYourBrand && !promoteBrandedContent);
 
   return (
     <div className="dashboard-layout">
@@ -1044,7 +1151,7 @@ export default function Dashboard() {
                         <div className="form-actions" style={{ marginTop: '20px' }}>
                           <button 
                             type="button" 
-                            onClick={() => setCreationStep(2)} 
+                            onClick={handleNextStep} 
                             className="glow-btn"
                             style={{ width: '100%', justifyContent: 'center', height: '48px', fontSize: '0.9rem' }} 
                             disabled={!videoFile}
@@ -1210,6 +1317,194 @@ export default function Dashboard() {
                           )}
                         </div>
 
+                        {/* CONFIGURAÇÕES DE METADADOS DO TIKTOK */}
+                        {selectedPlatforms.includes('tiktok') && (
+                          <div className="tiktok-metadata-section glass-panel" style={{ marginTop: '20px', padding: '16px', border: '1px solid rgba(22, 119, 255, 0.15)', borderRadius: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '8px' }}>
+                              <TikTokIcon size={16} />
+                              <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#fff' }}>Metadados do TikTok</span>
+                              {tiktokNickname && (
+                                <span style={{ fontSize: '0.75rem', opacity: 0.6, marginLeft: 'auto' }}>
+                                  Destino: <strong style={{ color: 'var(--tiktok-cyan)' }}>@{tiktokNickname}</strong>
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Nickname e Avatar da Conta */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '6px' }}>
+                              {tiktokAvatar ? (
+                                <img src={tiktokAvatar} alt="Avatar" style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
+                              ) : (
+                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#222', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold' }}>
+                                  {(tiktokNickname || 'T').charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                Publicando na conta de: <strong>{tiktokNickname || 'Conta Sandbox'}</strong>
+                              </span>
+                            </div>
+
+                            {/* Dropdown de Privacidade (Privacy Status) */}
+                            <div className="form-group" style={{ marginBottom: '16px' }}>
+                              <label className="form-label" htmlFor="tiktok-privacy" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                Status de Privacidade (Obrigatório)
+                                <span style={{ fontSize: '0.7rem', color: 'var(--error)' }}>* Requer seleção manual</span>
+                              </label>
+                              <select
+                                id="tiktok-privacy"
+                                className="form-input"
+                                value={tiktokPrivacy}
+                                onChange={(e) => setTiktokPrivacy(e.target.value)}
+                                style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.82rem' }}
+                              >
+                                <option value="" disabled>Selecione o nível de privacidade...</option>
+                                {creatorInfo?.privacy_level_options?.map((opt) => {
+                                  let label = opt;
+                                  if (opt === 'PUBLIC_TO_EVERYONE') label = 'Público (Todos)';
+                                  else if (opt === 'MUTUAL_FOLLOW_FRIENDS') label = 'Amigos (Seguidores Mútuos)';
+                                  else if (opt === 'SELF_ONLY') label = 'Apenas Eu (Privado)';
+                                  else if (opt === 'FOLLOWER_OF_CREATOR') label = 'Seguidores';
+                                  
+                                  const isDisabled = opt === 'SELF_ONLY' && commercialDisclosure && promoteBrandedContent;
+                                  
+                                  return (
+                                    <option 
+                                      key={opt} 
+                                      value={opt} 
+                                      disabled={isDisabled}
+                                    >
+                                      {label} {isDisabled ? ' - (Indisponível para Conteúdo de Marca)' : ''}
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                              {commercialDisclosure && promoteBrandedContent && (
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                                  💡 <em>Nota: Conteúdo de Marca não permite visibilidade privada ("Só Eu").</em>
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Permissões de Interação */}
+                            <div className="form-group" style={{ marginBottom: '16px' }}>
+                              <span className="form-label" style={{ fontSize: '0.8rem', marginBottom: '8px' }}>Configurações de Interação (Desmarcadas por padrão)</span>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', cursor: creatorInfo?.comment_disabled ? 'not-allowed' : 'pointer', opacity: creatorInfo?.comment_disabled ? 0.5 : 1 }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={tiktokComment}
+                                    onChange={(e) => setTiktokComment(e.target.checked)}
+                                    disabled={creatorInfo?.comment_disabled}
+                                  />
+                                  Permitir Comentários {creatorInfo?.comment_disabled && ' (Desativado pelo perfil)'}
+                                </label>
+
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', cursor: creatorInfo?.duet_disabled ? 'not-allowed' : 'pointer', opacity: creatorInfo?.duet_disabled ? 0.5 : 1 }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={tiktokDuet}
+                                    onChange={(e) => setTiktokDuet(e.target.checked)}
+                                    disabled={creatorInfo?.duet_disabled}
+                                  />
+                                  Permitir Dueto {creatorInfo?.duet_disabled && ' (Desativado pelo perfil)'}
+                                </label>
+
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', cursor: creatorInfo?.stitch_disabled ? 'not-allowed' : 'pointer', opacity: creatorInfo?.stitch_disabled ? 0.5 : 1 }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={tiktokStitch}
+                                    onChange={(e) => setTiktokStitch(e.target.checked)}
+                                    disabled={creatorInfo?.stitch_disabled}
+                                  />
+                                  Permitir Ponto / Stitch {creatorInfo?.stitch_disabled && ' (Desativado pelo perfil)'}
+                                </label>
+                              </div>
+                            </div>
+
+                            {/* Divulgação de Conteúdo Comercial */}
+                            <div className="form-group" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <span className="form-label" style={{ fontSize: '0.8rem', marginBottom: 0 }}>Conteúdo Comercial (Divulgação)</span>
+                                <label className="switch-toggle" style={{ transform: 'scale(0.85)' }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={commercialDisclosure}
+                                    onChange={(e) => {
+                                      const val = e.target.checked;
+                                      setCommercialDisclosure(val);
+                                      if (!val) {
+                                        setPromoteYourBrand(false);
+                                        setPromoteBrandedContent(false);
+                                      }
+                                    }}
+                                  />
+                                  <span className="switch-slider"></span>
+                                </label>
+                              </div>
+
+                              {commercialDisclosure && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  style={{ background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '6px', display: 'flex', flexDirection: 'column', gap: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.04)' }}
+                                >
+                                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                                    Selecione as opções de promoção comercial para este conteúdo:
+                                  </span>
+
+                                  {/* Checkbox: Sua Marca */}
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', cursor: 'pointer' }}>
+                                      <input
+                                        type="checkbox"
+                                        checked={promoteYourBrand}
+                                        onChange={(e) => setPromoteYourBrand(e.target.checked)}
+                                      />
+                                      Sua Marca (Sua empresa/negócio)
+                                    </label>
+                                    {promoteYourBrand && (
+                                      <span style={{ fontSize: '0.7rem', color: 'var(--tiktok-magenta)', marginLeft: '22px' }}>
+                                        📢 Sua foto/vídeo será rotulado como <strong>"Conteúdo Promocional"</strong>
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Checkbox: Conteúdo de Marca */}
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', cursor: 'pointer' }}>
+                                      <input
+                                        type="checkbox"
+                                        checked={promoteBrandedContent}
+                                        onChange={(e) => {
+                                          const val = e.target.checked;
+                                          setPromoteBrandedContent(val);
+                                          if (val && tiktokPrivacy === 'SELF_ONLY') {
+                                            setTiktokPrivacy('');
+                                            alert('A visibilidade de conteúdo de marca não pode ser privada ("Só Eu"). A seleção de privacidade foi redefinida.');
+                                          }
+                                        }}
+                                      />
+                                      Conteúdo de Marca (Promovendo outro negócio)
+                                    </label>
+                                    {promoteBrandedContent && (
+                                      <span style={{ fontSize: '0.7rem', color: 'var(--tiktok-magenta)', marginLeft: '22px' }}>
+                                        🤝 Sua foto/vídeo será rotulado como <strong>"Parceria paga"</strong>
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {promoteYourBrand && promoteBrandedContent && (
+                                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '6px', fontSize: '0.7rem', color: '#ffc107' }}>
+                                      ⚠️ Como ambas as opções foram marcadas, a publicação será rotulada como <strong>"Parceria paga"</strong>.
+                                    </div>
+                                  )}
+                                </motion.div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                         {/* AGENDADOR DE POSTAGEM */}
                         <div className="form-group" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '16px' }}>
                           <div className="scheduler-header">
@@ -1252,6 +1547,23 @@ export default function Dashboard() {
                           )}
                         </div>
 
+                        {/* Declaração de Consentimento Obrigatória */}
+                        {selectedPlatforms.includes('tiktok') && (
+                          <div className="consent-statement-box" style={{ 
+                            marginTop: '20px', 
+                            padding: '12px', 
+                            background: 'rgba(255, 255, 255, 0.03)', 
+                            border: '1px solid rgba(255, 255, 255, 0.05)', 
+                            borderRadius: '6px', 
+                            fontSize: '0.75rem', 
+                            color: 'var(--text-secondary)',
+                            textAlign: 'center',
+                            lineHeight: '1.4'
+                          }}>
+                            🔒 <strong>Termos de Consentimento:</strong> {getConsentStatement()}
+                          </div>
+                        )}
+
                         {/* Botoes de Acao do Stepper */}
                         <div className="stepper-actions-row" style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
                           <button 
@@ -1266,7 +1578,12 @@ export default function Dashboard() {
                           <button 
                             type="submit" className="glow-btn publish-btn" 
                             style={{ flex: '2', justifyContent: 'center', height: '46px' }} 
-                            disabled={selectedPlatforms.length === 0}
+                            disabled={isPublishDisabled}
+                            title={
+                              (selectedPlatforms.includes('tiktok') && commercialDisclosure && !promoteYourBrand && !promoteBrandedContent)
+                                ? "Você precisa indicar se seu conteúdo promove a si mesmo, a um terceiro ou ambos."
+                                : ""
+                            }
                           >
                             {isScheduled ? 'Agendar Postagem' : 'Publicar nas Redes'}
                           </button>
@@ -1625,6 +1942,23 @@ export default function Dashboard() {
                         </button>
                       )}
                     </div>
+
+                    {/* Controle de Simulação de Limite */}
+                    {tiktokConnected && (
+                      <div style={{ borderTop: '1px dashed rgba(255,255,255,0.06)', paddingTop: '10px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#ffc107', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          ⚠️ Simular Limite de Postagens Excedido
+                        </span>
+                        <label className="switch-toggle" style={{ transform: 'scale(0.75)' }}>
+                          <input
+                            type="checkbox"
+                            checked={simulatedLimitReached}
+                            onChange={(e) => setSimulatedLimitReached(e.target.checked)}
+                          />
+                          <span className="switch-slider"></span>
+                        </label>
+                      </div>
+                    )}
                     
                     {/* Painel de Diagnóstico do Perfil */}
                     <div style={{ borderTop: '1px dashed rgba(255,255,255,0.06)', paddingTop: '10px', marginTop: '4px' }}>
