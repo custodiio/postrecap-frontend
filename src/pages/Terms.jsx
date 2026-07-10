@@ -59,7 +59,7 @@ export default function Terms() {
 
             <h2>3. Third-Party Integrations and APIs</h2>
             <p>
-              Post Recap integrates with official third-party APIs, including the <strong>TikTok Developer Platform (TikTok API)</strong> and <strong>Meta for Developers (Instagram Graph API)</strong>.
+              Post Recap integrates with official third-party APIs, including the <strong>TikTok Developer Platform (TikTok API)</strong>, <strong>Meta for Developers (Instagram Graph API)</strong>, and <strong>Google API Services (YouTube Data API)</strong>.
             </p>
             <p>
               Our application requests specific API scopes to provide social media automation services:
@@ -70,6 +70,9 @@ export default function Terms() {
               </li>
               <li>
                 <strong>Instagram Graph API Integration:</strong> To schedule and publish Reels content, we request the <code>instagram_basic</code> and <code>instagram_content_publish</code> permissions. All actions are subject to the <a href="https://help.instagram.com/581076165575477" target="_blank" rel="noopener noreferrer">Instagram Terms of Use</a> and Meta Platform Terms.
+              </li>
+              <li>
+                <strong>YouTube API Integration:</strong> To schedule and publish video content, we request the <code>youtube.upload</code> and <code>youtube.readonly</code> permissions. By using our YouTube integration, you agree to be bound by the official <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">YouTube Terms of Service (ToS)</a> and Google Terms of Service.
               </li>
             </ul>
 
@@ -130,7 +133,7 @@ export default function Terms() {
 
             <h2>3. Integrações de Terceiros e APIs</h2>
             <p>
-              O Post Recap integra-se com APIs oficiais de terceiros, incluindo as do <strong>TikTok (TikTok Developer Platform)</strong> e do <strong>Instagram (Meta for Developers)</strong>.
+              O Post Recap integra-se com APIs oficiais de terceiros, incluindo as do <strong>TikTok (TikTok Developer Platform)</strong>, do <strong>Instagram (Meta for Developers)</strong> e do <strong>Google (YouTube Data API)</strong>.
             </p>
             <p>
               Nosso aplicativo solicita escopos específicos de API para fornecer serviços de automação de mídias sociais:
@@ -141,6 +144,9 @@ export default function Terms() {
               </li>
               <li>
                 <strong>Integração com a API do Instagram:</strong> Para agendar e publicar Reels, solicitamos as permissões <code>instagram_basic</code> e <code>instagram_content_publish</code>. Todas as ações estão sujeitas aos <a href="https://help.instagram.com/581076165575477" target="_blank" rel="noopener noreferrer">Termos de Uso do Instagram</a> e aos Termos da Plataforma Meta.
+              </li>
+              <li>
+                <strong>Integração com a API do YouTube:</strong> Para publicar e agendar vídeos no YouTube, solicitamos as permissões <code>youtube.upload</code> e <code>youtube.readonly</code>. Ao utilizar a integração com o YouTube em nossa plataforma, você concorda em cumprir e estar vinculado aos <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">Termos de Serviço do YouTube</a> e aos Termos de Serviço do Google.
               </li>
             </ul>
 

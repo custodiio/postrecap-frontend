@@ -59,11 +59,14 @@ export default function Privacy() {
               <li>
                 <strong>Instagram / Meta Graph API:</strong> Similarly, we request and store authorized page/user access tokens exclusively to automate the publishing and scheduling of Reels content that you actively submit to our interface.
               </li>
+              <li>
+                <strong>Google &amp; YouTube Data API:</strong> When you connect your YouTube channel, you grant permissions via the official Google OAuth 2.0 screen. We request access to the minimum required scopes: upload permission (to publish videos) and read-only permission (to retrieve your channel name and avatar for display on your dashboard). Our use and transfer of information received from Google APIs to any other app will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>, including the Limited Use requirements.
+              </li>
             </ul>
 
             <h2>3. Advanced Data Security & Token Encryption</h2>
             <p>
-              We prioritize the protection of your digital assets. All sensitive database records, including TikTok and Instagram OAuth access tokens, are encrypted at rest using industry-standard AES-256 encryption.
+              We prioritize the protection of your digital assets. All sensitive database records, including TikTok, Instagram, and YouTube OAuth access tokens, are encrypted at rest using industry-standard AES-256 encryption.
             </p>
             <p>
               Furthermore, to maintain a strict stateless architecture and avoid data accumulation:
@@ -73,13 +76,13 @@ export default function Privacy() {
                 <strong>Video Files Processing:</strong> Any video file you upload to our platform is stored temporarily on our isolated backend server disk.
               </li>
               <li>
-                <strong>Immediate Deletion:</strong> The moment the video is successfully published to TikTok or Instagram via the official APIs (or scheduled upload process finishes), the source video file is permanently and irreversibly purged from our servers.
+                <strong>Immediate Deletion:</strong> The moment the video is successfully published to TikTok, Instagram, or YouTube via the official APIs (or scheduled upload process finishes), the source video file is permanently and irreversibly purged from our servers.
               </li>
             </ul>
 
             <h2>4. Data Sharing</h2>
             <p>
-              We do not share any personally identifying information publicly or with third parties, except when required to do so by law, or when absolutely necessary to transmit video files and captions to the official APIs of TikTok and Instagram to fulfill your publishing requests.
+              We do not share any personally identifying information publicly or with third parties, except when required to do so by law, or when absolutely necessary to transmit video files and captions to the official APIs of TikTok, Instagram, and YouTube to fulfill your publishing requests.
             </p>
 
             <h2>5. Your Rights and Data Deletion (Instructions)</h2>
@@ -87,7 +90,7 @@ export default function Privacy() {
               You are free to refuse our request for personal information or social media API tokens, with the understanding that we may be unable to provide you with some of your desired services.
             </p>
             <p>
-              In compliance with TikTok and Meta (Instagram) Platform Policies, we provide you with the absolute right to revoke API permissions and request the deletion of your account and all associated data at any time:
+              In compliance with TikTok, Meta (Instagram), and Google (YouTube) Platform Policies, we provide you with the absolute right to revoke API permissions and request the deletion of your account and all associated data at any time:
             </p>
             <ul>
               <li>
@@ -95,6 +98,9 @@ export default function Privacy() {
               </li>
               <li>
                 <strong>Revoking Instagram/Meta Access:</strong> You can disconnect your Instagram page from our interface, or manage permissions directly on your Facebook settings page under <strong>Settings &amp; Privacy &rarr; Business Integrations</strong>.
+              </li>
+              <li>
+                <strong>Revoking Google/YouTube Access:</strong> You can disconnect your YouTube channel directly from our dashboard by clicking the <strong>"Disconnect"</strong> button. You can also revoke access at any time through your Google Security settings page at <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">Google Third-party apps with account access</a>.
               </li>
               <li>
                 <strong>Full Data Deletion:</strong> If you wish to permanently delete your Post Recap account and purge all your personal data, tokens, and records from our databases, please send an email request to our support at: <a href="mailto:contato@postrecap.tech">contato@postrecap.tech</a>. We will process your deletion request and confirm the purging of all data within 48 hours.
@@ -127,11 +133,14 @@ export default function Privacy() {
               <li>
                 <strong>Instagram/Meta API Data:</strong> Da mesma forma, utilizamos tokens autorizados de páginas exclusivamente para realizar o agendamento e a publicação de Reels que você expressamente solicita.
               </li>
+              <li>
+                <strong>Google &amp; YouTube API Data:</strong> Quando você conecta seu canal do YouTube, solicitamos autorização via OAuth 2.0 do Google. Nós solicitamos permissão para fazer uploads de vídeos e para ler informações públicas básicas do seu canal (nome e imagem do avatar para exibir no dashboard). Nossa utilização e transferência de informações recebidas de APIs do Google para qualquer outro aplicativo estarão em total conformidade com a <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>, incluindo os seus requisitos de Uso Limitado.
+              </li>
             </ul>
 
             <h2>3. Segurança de Dados Avançada & Criptografia de Tokens</h2>
             <p>
-              Priorizamos a proteção dos seus ativos digitais. Todos os registros confidenciais do banco de dados, incluindo tokens de acesso OAuth do TikTok e Instagram, são criptografados em repouso usando criptografia AES-256 padrão da indústria.
+              Priorizamos a proteção dos seus ativos digitais. Todos os registros confidenciais do banco de dados, incluindo tokens de acesso OAuth do TikTok, Instagram e YouTube, são criptografados em repouso usando criptografia AES-256 padrão da indústria.
             </p>
             <p>
               Além disso, para manter uma arquitetura stateless estrita e evitar o acúmulo de dados confidenciais:
@@ -141,13 +150,13 @@ export default function Privacy() {
                 <strong>Processamento de Arquivos de Vídeo:</strong> Qualquer arquivo de vídeo que você envia para nossa plataforma é armazenado de forma estritamente temporária em nosso servidor backend isolado.
               </li>
               <li>
-                <strong>Exclusão Imediata:</strong> No momento em que o vídeo é publicado no TikTok ou Instagram via APIs oficiais (ou o envio agendado é concluído), o arquivo de vídeo original é apagado de forma definitiva e irreversível dos nossos servidores.
+                <strong>Exclusão Imediata:</strong> No momento em que o vídeo é publicado no TikTok, Instagram ou YouTube via APIs oficiais (ou o envio agendado é concluído), o arquivo de vídeo original é apagado de forma definitiva e irreversível dos nossos servidores.
               </li>
             </ul>
 
             <h2>4. Compartilhamento de Dados</h2>
             <p>
-              Não compartilhamos informações de identificação pessoal publicamente ou com terceiros, exceto quando exigido por lei ou quando estritamente necessário para concluir as solicitações de publicação feitas por você nas APIs oficiais do TikTok e Instagram.
+              Não compartilhamos informações de identificação pessoal publicamente ou com terceiros, exceto quando exigido por lei ou quando estritamente necessário para concluir as solicitações de publicação feitas por você nas APIs oficiais do TikTok, Instagram e YouTube.
             </p>
 
             <h2>5. Direitos do Usuário e Exclusão de Dados (Instruções)</h2>
@@ -155,7 +164,7 @@ export default function Privacy() {
               Você é livre para recusar a nossa solicitação de informações pessoais ou de tokens de mídia social, entendendo que talvez não possamos fornecer alguns dos serviços desejados.
             </p>
             <p>
-              Em conformidade com as diretrizes do TikTok e do Instagram, oferecemos a você o direito total de desvincular suas contas e apagar todos os dados de forma instantânea:
+              Em conformidade com as diretrizes do TikTok, Instagram e Google (YouTube), oferecemos a você o direito total de desvincular suas contas e apagar todos os dados de forma instantânea:
             </p>
             <ul>
               <li>
@@ -163,6 +172,9 @@ export default function Privacy() {
               </li>
               <li>
                 <strong>Desvincular Instagram:</strong> A desconexão pode ser feita em nosso painel ou gerenciando suas integrações de negócios em sua conta do Facebook em <strong>Configurações e Privacidade &rarr; Integrações de Empresas</strong>.
+              </li>
+              <li>
+                <strong>Desvincular Google/YouTube:</strong> A desconexão pode ser feita no nosso painel. Além disso, você pode revogar as permissões a qualquer momento através das configurações de segurança do Google em <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">Google Aplicativos de terceiros com acesso à conta</a>.
               </li>
               <li>
                 <strong>Exclusão Completa dos Dados:</strong> Para solicitar a exclusão total da sua conta do Post Recap e todos os dados associados a ela, envie um e-mail com a solicitação para o nosso suporte: <a href="mailto:contato@postrecap.tech">contato@postrecap.tech</a>. Processaremos a exclusão em até 48 horas.

@@ -172,6 +172,7 @@ export default function Dashboard() {
     setUserName(localStorage.getItem('user_name') || '');
     setUserAvatar(localStorage.getItem('user_avatar') || '');
     checkTiktokConnection(email);
+    checkYoutubeConnection(email);
 
     // Carregar postagens do localStorage ou inicializar com dados ricos
     loadPosts();
@@ -202,6 +203,13 @@ export default function Dashboard() {
       setTimeout(() => setUploadMessage(''), 5000);
     } else if (params.get('tiktok_error')) {
       setUploadMessage(`Falha ao conectar TikTok: ${params.get('tiktok_error')}`);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (params.get('youtube_success') === 'true') {
+      setUploadMessage('Conta do YouTube conectada com sucesso!');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setTimeout(() => setUploadMessage(''), 5000);
+    } else if (params.get('youtube_error')) {
+      setUploadMessage(`Falha ao conectar YouTube: ${params.get('youtube_error')}`);
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [navigate]);
@@ -364,6 +372,22 @@ export default function Dashboard() {
     } catch (err) { console.error("Erro ao obter status do TikTok:", err); }
   };
 
+  const checkYoutubeConnection = async (email) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/youtube/status?email=${email}`);
+      if (res.ok) {
+        const data = await res.json();
+        setYoutubeConnected(data.connected);
+        if (data.connected) {
+          setYoutubeChannelName(data.channel_name);
+          if (!selectedPlatforms.includes('youtube')) {
+            setSelectedPlatforms(prev => [...prev, 'youtube']);
+          }
+        }
+      }
+    } catch (err) { console.error("Erro ao obter status do YouTube:", err); }
+  };
+
   const handleTiktokConnect = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/tiktok/login?email=${userEmail}`);
@@ -440,20 +464,47 @@ export default function Dashboard() {
     }
   };
 
-  // Simular conexão YouTube
-  const handleYoutubeConnect = () => {
+  // Conectar/Desconectar YouTube via OAuth 2.0 real
+  const handleYoutubeConnect = async () => {
     if (youtubeConnected) {
-      if (window.confirm("Desconectar do YouTube Shorts API?")) {
-        setYoutubeConnected(false);
-        setYoutubeChannelName('');
-        setSelectedPlatforms(prev => prev.filter(p => p !== 'youtube'));
+      if (window.confirm("Desconectar do YouTube?")) {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/youtube/disconnect`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: userEmail })
+          });
+          if (res.ok) {
+            setYoutubeConnected(false);
+            setYoutubeChannelName('');
+            setSelectedPlatforms(prev => prev.filter(p => p !== 'youtube'));
+            setUploadMessage('YouTube desconectado com sucesso!');
+            setTimeout(() => setUploadMessage(''), 4000);
+          } else {
+            alert('Falha ao desconectar do YouTube');
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Erro ao conectar com o servidor');
+        }
       }
     } else {
-      setYoutubeConnected(true);
-      setYoutubeChannelName('Kumar Recaps (Shorts)');
-      setSelectedPlatforms(prev => [...prev, 'youtube']);
-      setUploadMessage('YouTube Shorts API Studio conectado com sucesso (Simulado)!');
-      setTimeout(() => setUploadMessage(''), 4000);
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/youtube/login?email=${userEmail}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.url) {
+            window.location.href = data.url;
+          } else {
+            alert('URL de login não retornada pelo servidor');
+          }
+        } else {
+          alert('Erro ao requisitar login do YouTube');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao conectar com o servidor');
+      }
     }
   };
 
@@ -652,13 +703,16 @@ export default function Dashboard() {
 
     // 7. Dispara a Promise em background de forma assíncrona (suporta múltiplas requisições paralelas)
     (async () => {
-      let tiktokSuccess = true;
+      let uploadSuccess = true;
+      let errorMessage = '';
+
+      // 1. Processa upload do TikTok se selecionado e conectado
       if (bgSelectedPlatforms.includes('tiktok') && tiktokConnected) {
         const formData = new FormData();
         formData.append('email', bgEmail);
         formData.append('title', bgCaption);
         formData.append('video', bgVideoFile);
-        formData.append('post_id', postId); // OBRIGATÓRIO: envia o post_id para o backend rastrear o status real!
+        formData.append('post_id', postId);
         formData.append('privacy_level', tiktokPrivacy);
         formData.append('disable_comment', !tiktokComment);
         formData.append('disable_duet', !tiktokDuet);
@@ -668,56 +722,40 @@ export default function Dashboard() {
           const uploadPromise = () => new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open('POST', `${API_BASE_URL}/api/tiktok/upload`);
-            
-            // Monitora o progresso de upload da rede local para o nosso backend
             xhr.upload.onprogress = (event) => {
               if (event.lengthComputable) {
                 const percent = Math.round((event.loaded / event.total) * 100);
-                // O progresso local representa de 0 a 15% do progresso de envio total visual
                 setUploadingPosts(prev => {
                   if (!prev[postId]) return prev;
+                  const maxPercent = bgSelectedPlatforms.includes('youtube') && youtubeConnected ? 7 : 15;
                   return {
                     ...prev,
-                    [postId]: { ...prev[postId], progress: Math.min(Math.round(percent * 0.15), 15) }
+                    [postId]: { ...prev[postId], progress: Math.min(Math.round(percent * (maxPercent / 100)), maxPercent) }
                   };
                 });
               }
             };
-            
-            xhr.onload = () => {
-              if (xhr.status >= 200 && xhr.status < 300) {
-                resolve(xhr.responseText);
-              } else {
-                reject(new Error(`Status ${xhr.status}`));
-              }
-            };
-            
-            xhr.onerror = () => {
-              reject(new Error('Erro na conexão com o servidor local.'));
-            };
-            
+            xhr.onload = () => xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Status ${xhr.status}`));
+            xhr.onerror = () => reject(new Error('Erro na conexão com o servidor local.'));
             xhr.send(formData);
           });
 
-          // 1. Envia o arquivo do navegador para o backend FastAPI (instantâneo)
           await uploadPromise();
-          
-          // 2. Inicia o Polling para acompanhar o upload real do backend FastAPI para a API do TikTok!
+
           const pollStatus = () => new Promise((resolvePoll, rejectPoll) => {
             const checkInterval = setInterval(async () => {
               try {
                 const res = await fetch(`${API_BASE_URL}/api/tiktok/upload-status?post_id=${postId}`);
-                if (!res.ok) return; // ignora falhas pontuais de rede no polling
+                if (!res.ok) return;
                 const data = await res.json();
-                
                 if (data.status === 'uploading') {
-                  // Atualiza a porcentagem real retornada pelo backend FastAPI
                   setUploadingPosts(prev => {
                     if (!prev[postId]) return prev;
-                    return {
-                      ...prev,
-                      [postId]: { ...prev[postId], progress: data.progress }
-                    };
+                    let prog = data.progress;
+                    if (bgSelectedPlatforms.includes('youtube') && youtubeConnected) {
+                      prog = Math.round(data.progress * 0.5);
+                    }
+                    return { ...prev, [postId]: { ...prev[postId], progress: prog } };
                   });
                 } else if (data.status === 'success') {
                   clearInterval(checkInterval);
@@ -726,26 +764,87 @@ export default function Dashboard() {
                   clearInterval(checkInterval);
                   rejectPoll(new Error(data.message || 'Erro no processamento do TikTok.'));
                 }
-              } catch (e) {
-                // ignora erros de rede temporários na rota de polling
-              }
+              } catch (e) {}
             }, 2000);
           });
 
           await pollStatus();
-          
-          setUploadingPosts(prev => {
-            if (!prev[postId]) return prev;
-            return {
-              ...prev,
-              [postId]: { ...prev[postId], progress: 100, status: 'success' }
-            };
-          });
         } catch (error) {
-          tiktokSuccess = false;
+          uploadSuccess = false;
+          errorMessage = `TikTok: ${error.message}`;
         }
-      } else {
-        // Simulação fluida de progresso por post (caso não envie para o TikTok Sandbox)
+      }
+
+      // 2. Processa upload do YouTube se selecionado, conectado (e se não houve erro anterior)
+      if (uploadSuccess && bgSelectedPlatforms.includes('youtube') && youtubeConnected) {
+        const formData = new FormData();
+        formData.append('email', bgEmail);
+        formData.append('title', bgCaption);
+        formData.append('video', bgVideoFile);
+        formData.append('post_id', postId);
+        formData.append('privacy_level', 'private');
+
+        try {
+          const uploadPromise = () => new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `${API_BASE_URL}/api/youtube/upload`);
+            xhr.upload.onprogress = (event) => {
+              if (event.lengthComputable) {
+                const percent = Math.round((event.loaded / event.total) * 100);
+                setUploadingPosts(prev => {
+                  if (!prev[postId]) return prev;
+                  const startPercent = bgSelectedPlatforms.includes('tiktok') && tiktokConnected ? 50 : 0;
+                  const range = bgSelectedPlatforms.includes('tiktok') && tiktokConnected ? 10 : 15;
+                  const current = startPercent + Math.min(Math.round(percent * (range / 100)), range);
+                  return { ...prev, [postId]: { ...prev[postId], progress: current } };
+                });
+              }
+            };
+            xhr.onload = () => xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Status ${xhr.status}`));
+            xhr.onerror = () => reject(new Error('Erro na conexão com o servidor local.'));
+            xhr.send(formData);
+          });
+
+          await uploadPromise();
+
+          const pollStatus = () => new Promise((resolvePoll, rejectPoll) => {
+            const checkInterval = setInterval(async () => {
+              try {
+                const res = await fetch(`${API_BASE_URL}/api/youtube/upload-status?post_id=${postId}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.status === 'uploading') {
+                  setUploadingPosts(prev => {
+                    if (!prev[postId]) return prev;
+                    let prog = data.progress;
+                    if (bgSelectedPlatforms.includes('tiktok') && tiktokConnected) {
+                      prog = 50 + Math.round(data.progress * 0.5);
+                    }
+                    return { ...prev, [postId]: { ...prev[postId], progress: prog } };
+                  });
+                } else if (data.status === 'success') {
+                  clearInterval(checkInterval);
+                  resolvePoll();
+                } else if (data.status === 'error') {
+                  clearInterval(checkInterval);
+                  rejectPoll(new Error(data.message || 'Erro no processamento do YouTube.'));
+                }
+              } catch (e) {}
+            }, 2000);
+          });
+
+          await pollStatus();
+        } catch (error) {
+          uploadSuccess = false;
+          errorMessage = `YouTube: ${error.message}`;
+        }
+      }
+
+      // 3. Simulação fluida de progresso (caso não envie para nenhuma rede real)
+      const hasRealTiktok = bgSelectedPlatforms.includes('tiktok') && tiktokConnected;
+      const hasRealYoutube = bgSelectedPlatforms.includes('youtube') && youtubeConnected;
+
+      if (!hasRealTiktok && !hasRealYoutube) {
         for (let p = 0; p <= 100; p += 10) {
           setUploadingPosts(prev => {
             if (!prev[postId]) return prev;
@@ -756,18 +855,17 @@ export default function Dashboard() {
           });
           await new Promise(r => setTimeout(r, 200));
         }
-        
+      }
+
+      if (uploadSuccess) {
         setUploadingPosts(prev => {
           if (!prev[postId]) return prev;
           return {
             ...prev,
-            [postId]: { ...prev[postId], status: 'success' }
+            [postId]: { ...prev[postId], progress: 100, status: 'success' }
           };
         });
-      }
 
-      if (tiktokSuccess) {
-        // Atualiza o status do post real de 'Enviando' para 'Publicado' ou 'Agendado'
         setPostsList(prev => {
           const updated = prev.map(p => {
             if (p.id === postId) {
@@ -779,14 +877,12 @@ export default function Dashboard() {
           return updated;
         });
 
-        // Adiciona notificação de sucesso no sino
         addNotification(
           'success',
           bgIsScheduled ? 'Agendamento Concluído' : 'Publicado com Sucesso',
           `✓ O vídeo "${bgCaption.substring(0, 30)}${bgCaption.length > 30 ? '...' : ''}" foi ${bgIsScheduled ? 'agendado' : 'publicado'} com sucesso nas redes!`
         );
 
-        // Remove do estado de uploads ativos após 3 segundos para que o usuário veja a finalização
         setTimeout(() => {
           setUploadingPosts(prev => {
             const copy = { ...prev };
@@ -795,7 +891,14 @@ export default function Dashboard() {
           });
         }, 3000);
       } else {
-        // Atualiza o status do post real para 'Erro' para controle direto na grade
+        setUploadingPosts(prev => {
+          if (!prev[postId]) return prev;
+          return {
+            ...prev,
+            [postId]: { ...prev[postId], status: 'error', progress: 0, message: errorMessage }
+          };
+        });
+
         setPostsList(prev => {
           const updated = prev.map(p => {
             if (p.id === postId) {
@@ -807,18 +910,10 @@ export default function Dashboard() {
           return updated;
         });
 
-        // Remove do active uploads para cessar carregamento
-        setUploadingPosts(prev => {
-          const copy = { ...prev };
-          delete copy[postId];
-          return copy;
-        });
-
-        // Adiciona notificação de erro no sino
         addNotification(
           'error',
           'Erro de Publicação',
-          `✕ Falha ao enviar o vídeo "${bgCaption.substring(0, 30)}${bgCaption.length > 30 ? '...' : ''}" para o TikTok Sandbox.`
+          `✕ Falha ao enviar o vídeo "${bgCaption.substring(0, 30)}${bgCaption.length > 30 ? '...' : ''}": ${errorMessage}`
         );
       }
     })();
