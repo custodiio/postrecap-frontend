@@ -46,10 +46,11 @@ export default function TikTokMockup({
   tiktokAvatar,
   instagramUsername,
   youtubeChannelName,
-  youtubeAvatar
+  youtubeAvatar,
+  youtubeFormat
 }) {
   const [platform, setPlatform] = useState('tiktok'); // 'tiktok', 'instagram', 'youtube'
-  const [viewMode, setViewMode] = useState('fyp'); // tiktok: 'fyp'/'profile', instagram: 'reels'/'profile', youtube: 'shorts'
+  const [viewMode, setViewMode] = useState('fyp'); // tiktok: 'fyp'/'profile', instagram: 'reels'/'profile', youtube: 'shorts'/'video'/'profile'
   
   const username = platform === 'tiktok' ? (tiktokUsername || propUsername)
     : platform === 'instagram' ? (instagramUsername || propUsername)
@@ -71,8 +72,15 @@ export default function TikTokMockup({
   useEffect(() => {
     if (platform === 'tiktok') setViewMode('fyp');
     else if (platform === 'instagram') setViewMode('reels');
-    else if (platform === 'youtube') setViewMode('shorts');
+    else if (platform === 'youtube') setViewMode(youtubeFormat || 'shorts');
   }, [platform]);
+
+  // Sincroniza viewMode com o formato escolhido no formulário do YouTube
+  useEffect(() => {
+    if (platform === 'youtube' && youtubeFormat) {
+      setViewMode(youtubeFormat);
+    }
+  }, [youtubeFormat, platform]);
 
   // Reinicia o vídeo quando o videoUrl mudar
   useEffect(() => {
@@ -112,7 +120,7 @@ export default function TikTokMockup({
   const platformConfig = {
     tiktok: { label: 'TikTok', modes: ['fyp', 'profile'], modeLabels: { fyp: 'Para Você', profile: 'Perfil' }, defaultMode: 'fyp' },
     instagram: { label: 'Instagram', modes: ['reels', 'profile'], modeLabels: { reels: 'Reels', profile: 'Perfil' }, defaultMode: 'reels' },
-    youtube: { label: 'YouTube', modes: ['shorts'], modeLabels: { shorts: 'Shorts' }, defaultMode: 'shorts' }
+    youtube: { label: 'YouTube', modes: ['shorts', 'video', 'profile'], modeLabels: { shorts: 'Shorts', video: 'Vídeo', profile: 'Perfil' }, defaultMode: 'shorts' }
   };
 
   const activePlatformConfig = platformConfig[platform];
@@ -207,36 +215,38 @@ export default function TikTokMockup({
         })}
       </div>
 
-      {/* Frame do Celular */}
+      {/* Frame do Celular (iPhone 16 Pro Titânio Style) */}
       <div className="phone-device" style={{
         width: '280px',
         height: '570px',
-        background: '#000',
-        borderRadius: '36px',
-        border: '8px solid #1c1c28',
-        boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 3px var(--border-color)',
+        background: '#020205',
+        borderRadius: '40px',
+        border: '5px solid #2b2b36',
+        boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 0 1px #4a4a5a, inset 0 0 0 2px rgba(255,255,255,0.1)',
         position: 'relative',
         overflow: 'hidden',
         userSelect: 'none',
-        flexShrink: 0
+        flexShrink: 0,
+        transition: 'all 0.3s ease'
       }}>
-        {/* Dynamic Island */}
+        {/* Dynamic Island Reduzida (iPhone 16 Pro Style) */}
         <div style={{
-          width: '100px',
-          height: '22px',
+          width: '85px',
+          height: '18px',
           background: '#000',
-          borderRadius: '15px',
+          borderRadius: '20px',
           position: 'absolute',
-          top: '8px',
+          top: '10px',
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 100,
           display: 'flex',
           justifyContent: 'center',
-          alignItems: 'center'
+          alignItems: 'center',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
         }}>
-          <div style={{ width: '5px', height: '5px', background: '#111', borderRadius: '50%', marginRight: '16px' }} />
-          <div style={{ width: '30px', height: '4px', background: '#111', borderRadius: '10px' }} />
+          <div style={{ width: '4px', height: '4px', background: '#0a0a1f', borderRadius: '50%', marginRight: '12px', border: '1px solid #111' }} />
+          <div style={{ width: '22px', height: '3px', background: '#050510', borderRadius: '10px' }} />
         </div>
 
         {/* ────────── MODO TIKTOK: FYP ────────── */}
@@ -609,7 +619,7 @@ export default function TikTokMockup({
         )}
 
         {/* ────────── MODO YOUTUBE: SHORTS ────────── */}
-        {platform === 'youtube' && (
+        {platform === 'youtube' && viewMode === 'shorts' && (
           <div style={{ width: '100%', height: '100%', position: 'relative', background: '#020202' }}>
             {/* Header Shorts YT */}
             <div style={{
@@ -617,7 +627,7 @@ export default function TikTokMockup({
               justifyContent: 'space-between', alignItems: 'center', padding: '0 16px', zIndex: 10, color: '#fff'
             }}>
               <span style={{ fontWeight: '800', fontSize: '1rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ color: '#ff0000' }}>▶</span> Shorts
+                <span style={{ color: '#ff0000' }}>▶</span> YouTube
               </span>
               <Search size={18} />
             </div>
@@ -690,7 +700,7 @@ export default function TikTokMockup({
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                 <div style={{
                   width: '28px', height: '28px', borderRadius: '50%', background: '#fff',
-                  backgroundImage: avatar ? `url(${avatar})` : 'none', backgroundSize: 'cover',
+                  backgroundImage: avatar ? `url(${avatar})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: '10px', fontWeight: 'bold'
                 }}>
                   {!avatar && (username || "K").charAt(0).toUpperCase()}
@@ -707,6 +717,159 @@ export default function TikTokMockup({
                 {hashtags.map((tag, idx) => (
                   <span key={idx} style={{ color: '#38bdf8', fontWeight: '600', marginRight: '4px' }}>{tag}</span>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ────────── MODO YOUTUBE: VÍDEO PADRÃO (HORIZONTAL) ────────── */}
+        {platform === 'youtube' && viewMode === 'video' && (
+          <div style={{ width: '100%', height: '100%', background: '#0f0f0f', color: '#fff', display: 'flex', flexDirection: 'column' }}>
+            {/* Player de Vídeo em proporção 16:9 */}
+            <div style={{ width: '100%', height: '160px', background: '#000', position: 'relative', marginTop: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {videoUrl ? (
+                <video ref={videoRef} src={videoUrl} loop muted autoPlay playsInline style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
+                  <Film size={24} />
+                  <span style={{ fontSize: '0.65rem' }}>Aguardando Vídeo</span>
+                </div>
+              )}
+              {/* Barra de Progresso Vermelha do YT */}
+              <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', height: '3px', background: 'rgba(255,255,255,0.2)' }}>
+                <div style={{ width: '35%', height: '100%', background: '#ff0000' }} />
+              </div>
+              {/* Botões de Controle sobrepostos discretos */}
+              <div style={{ position: 'absolute', right: '8px', bottom: '8px', fontSize: '0.65rem', color: '#fff', background: 'rgba(0,0,0,0.6)', padding: '2px 5px', borderRadius: '3px' }}>
+                0:17
+              </div>
+            </div>
+
+            {/* Conteúdo de Detalhes com Scroll */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '12px', textAlign: 'left' }}>
+              <h4 style={{ fontSize: '0.85rem', fontWeight: 'bold', margin: '0 0 6px 0', color: '#fff', lineHeight: '1.3' }}>
+                {caption || "Título do vídeo do YouTube..."}
+              </h4>
+              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                12K visualizações • há 2 horas
+              </div>
+
+              {/* Botões Rápidos do YT */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '12px' }}>
+                <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '15px', padding: '4px 10px', alignItems: 'center', cursor: 'pointer' }} onClick={handleLike}>
+                  <ThumbsUp size={12} color={liked ? '#ff0000' : '#fff'} fill={liked ? '#ff0000' : 'none'} />
+                  <span style={{ fontSize: '0.65rem', fontWeight: 'bold', marginLeft: '4px' }}>{formatNumber(likeCount - 4300)}</span>
+                </div>
+                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.06)', borderRadius: '15px', padding: '4px 10px', alignItems: 'center' }}>
+                  <ThumbsDown size={12} color="#fff" />
+                </div>
+                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.06)', borderRadius: '15px', padding: '4px 10px', alignItems: 'center', gap: '4px' }}>
+                  <Share2 size={11} />
+                  <span style={{ fontSize: '0.65rem', fontWeight: 'bold' }}>Compartilhar</span>
+                </div>
+              </div>
+
+              {/* Canal do Criador */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', padding: '8px 10px', borderRadius: '8px', marginBottom: '14px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{
+                    width: '28px', height: '28px', borderRadius: '50%', background: '#fff',
+                    backgroundImage: avatar ? `url(${avatar})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: '10px', fontWeight: 'bold'
+                  }}>
+                    {!avatar && (username || "K").charAt(0).toUpperCase()}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 'bold', color: '#fff' }}>{username}</span>
+                    <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>124K inscritos</span>
+                  </div>
+                </div>
+                <span style={{ background: '#fff', color: '#000', fontSize: '0.68rem', padding: '4px 10px', borderRadius: '14px', fontWeight: 'bold', cursor: 'pointer' }}>
+                  Inscrever-se
+                </span>
+              </div>
+
+              {/* Caixa de Comentários */}
+              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '10px' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Comentários (243)</div>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+                  <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'var(--primary)', fontSize: '8px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>A</div>
+                  <p style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.3' }}>
+                    Muito bom o recap desse anime! A edição ficou incrível. 👏
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ────────── MODO YOUTUBE: PERFIL/CANAL ────────── */}
+        {platform === 'youtube' && viewMode === 'profile' && (
+          <div style={{ width: '100%', height: '100%', background: '#0f0f0f', color: '#fff', overflowY: 'auto', padding: '38px 0 15px' }}>
+            {/* Banner do Canal */}
+            <div style={{ width: '100%', height: '55px', background: 'linear-gradient(90deg, #ff0000 0%, #1e1b4b 100%)', position: 'relative' }}>
+              <div style={{ position: 'absolute', top: '10px', left: '15px', color: '#fff', fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(0,0,0,0.5)', padding: '2px 6px', borderRadius: '4px' }}>
+                Post Recap Studio
+              </div>
+            </div>
+
+            {/* Informações Principais do Canal */}
+            <div style={{ padding: '12px 15px', textAlign: 'left' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{
+                  width: '52px', height: '52px', borderRadius: '50%', border: '1px solid rgba(255, 255, 255, 0.1)', background: '#222',
+                  backgroundImage: avatar ? `url(${avatar})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 'bold'
+                }}>
+                  {!avatar && (username || "K").charAt(0).toUpperCase()}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: '800', margin: '0 0 2px 0' }}>{username}</h3>
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>@{username} • 124 mil inscritos • 45 vídeos</span>
+                </div>
+              </div>
+
+              {/* Botões Gerenciar/Personalizar */}
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '14px' }}>
+                <div style={{ flex: 1, background: 'rgba(255,255,255,0.08)', padding: '6px', borderRadius: '16px', fontSize: '0.72rem', fontWeight: 'bold', textAlign: 'center', cursor: 'pointer' }}>
+                  Gerenciar Vídeos
+                </div>
+                <div style={{ flex: 1, background: 'rgba(255,255,255,0.08)', padding: '6px', borderRadius: '16px', fontSize: '0.72rem', fontWeight: 'bold', textAlign: 'center', cursor: 'pointer' }}>
+                  Personalizar Canal
+                </div>
+              </div>
+
+              {/* Abas Horizontais do Canal */}
+              <div style={{ display: 'flex', gap: '15px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '6px', marginBottom: '10px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                <span style={{ color: '#fff', borderBottom: '2px solid #fff', paddingBottom: '6px' }}>Vídeos</span>
+                <span style={{ opacity: 0.5 }}>Shorts</span>
+                <span style={{ opacity: 0.5 }}>Playlists</span>
+              </div>
+
+              {/* Grade de Vídeos */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px' }}>
+                <div style={{ aspectRatio: '16/9', background: '#1c1c1e', position: 'relative', overflow: 'hidden', borderRadius: '4px', border: '1px solid #ff0000', gridColumn: 'span 3', marginBottom: '8px' }}>
+                  {videoUrl ? (
+                    <video src={videoUrl} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(45deg, #1f0404, #030307)' }} />
+                  )}
+                  <span style={{ position: 'absolute', bottom: '4px', right: '4px', fontSize: '0.55rem', fontWeight: 'bold', background: 'rgba(0,0,0,0.7)', padding: '1px 4px', borderRadius: '2px' }}>Recente</span>
+                </div>
+                
+                {/* Outros vídeos secundários */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <div style={{ aspectRatio: '16/9', background: 'rgba(255,255,255,0.03)', borderRadius: '3px' }} />
+                  <span style={{ fontSize: '0.55rem', opacity: 0.6 }}>Recap #3</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <div style={{ aspectRatio: '16/9', background: 'rgba(255,255,255,0.03)', borderRadius: '3px' }} />
+                  <span style={{ fontSize: '0.55rem', opacity: 0.6 }}>Recap #2</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <div style={{ aspectRatio: '16/9', background: 'rgba(255,255,255,0.03)', borderRadius: '3px' }} />
+                  <span style={{ fontSize: '0.55rem', opacity: 0.6 }}>Recap #1</span>
+                </div>
               </div>
             </div>
           </div>
