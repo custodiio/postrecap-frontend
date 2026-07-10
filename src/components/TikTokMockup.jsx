@@ -36,9 +36,29 @@ function YouTubeIcon({ size = 20 }) {
   );
 }
 
-export default function TikTokMockup({ videoUrl, caption, hashtags = [], username = "kumarecaps", avatar }) {
+export default function TikTokMockup({ 
+  videoUrl, 
+  caption, 
+  hashtags = [], 
+  username: propUsername = "kumarecaps", 
+  avatar: propAvatar,
+  tiktokUsername,
+  tiktokAvatar,
+  instagramUsername,
+  youtubeChannelName,
+  youtubeAvatar
+}) {
   const [platform, setPlatform] = useState('tiktok'); // 'tiktok', 'instagram', 'youtube'
   const [viewMode, setViewMode] = useState('fyp'); // tiktok: 'fyp'/'profile', instagram: 'reels'/'profile', youtube: 'shorts'
+  
+  const username = platform === 'tiktok' ? (tiktokUsername || propUsername)
+    : platform === 'instagram' ? (instagramUsername || propUsername)
+    : platform === 'youtube' ? (youtubeChannelName || propUsername)
+    : propUsername;
+
+  const avatar = platform === 'tiktok' ? (tiktokAvatar || propAvatar)
+    : platform === 'youtube' ? youtubeAvatar
+    : '';
   
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(14200);

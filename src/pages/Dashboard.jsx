@@ -118,6 +118,8 @@ export default function Dashboard() {
   // YouTube Connection Status (Simulado)
   const [youtubeConnected, setYoutubeConnected] = useState(false);
   const [youtubeChannelName, setYoutubeChannelName] = useState('');
+  const [youtubeAvatar, setYoutubeAvatar] = useState('');
+  const [youtubePrivacy, setYoutubePrivacy] = useState('private');
   
   const [videoFile, setVideoFile] = useState(null);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState('');
@@ -380,6 +382,7 @@ export default function Dashboard() {
         setYoutubeConnected(data.connected);
         if (data.connected) {
           setYoutubeChannelName(data.channel_name);
+          setYoutubeAvatar(data.avatar || '');
           if (!selectedPlatforms.includes('youtube')) {
             setSelectedPlatforms(prev => [...prev, 'youtube']);
           }
@@ -477,6 +480,7 @@ export default function Dashboard() {
           if (res.ok) {
             setYoutubeConnected(false);
             setYoutubeChannelName('');
+            setYoutubeAvatar('');
             setSelectedPlatforms(prev => prev.filter(p => p !== 'youtube'));
             setUploadMessage('YouTube desconectado com sucesso!');
             setTimeout(() => setUploadMessage(''), 4000);
@@ -640,6 +644,7 @@ export default function Dashboard() {
     const bgScheduleDateTime = scheduleDateTime;
     const bgVideoThumbnail = videoThumbnail;
     const bgEmail = userEmail;
+    const bgYoutubePrivacy = youtubePrivacy;
 
     // 1. Geramos um ID único para esse upload concorrente
     const postId = Date.now().toString();
@@ -690,6 +695,7 @@ export default function Dashboard() {
     setScheduleDateTime('');
     setCreationStep(1);
     setTiktokPrivacy('');
+    setYoutubePrivacy('private');
     setTiktokComment(false);
     setTiktokDuet(false);
     setTiktokStitch(false);
@@ -782,7 +788,7 @@ export default function Dashboard() {
         formData.append('title', bgCaption);
         formData.append('video', bgVideoFile);
         formData.append('post_id', postId);
-        formData.append('privacy_level', 'private');
+        formData.append('privacy_level', bgYoutubePrivacy);
 
         try {
           const uploadPromise = () => new Promise((resolve, reject) => {
@@ -1600,6 +1606,57 @@ export default function Dashboard() {
                           </div>
                         )}
 
+                        {/* CONFIGURAÇÕES DE METADADOS DO YOUTUBE */}
+                        {selectedPlatforms.includes('youtube') && youtubeConnected && (
+                          <div className="youtube-metadata-section glass-panel" style={{ marginTop: '20px', padding: '16px', border: '1px solid rgba(255, 0, 0, 0.15)', borderRadius: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '8px' }}>
+                              <YoutubeIcon size={16} />
+                              <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#fff' }}>Metadados do YouTube</span>
+                              {youtubeChannelName && (
+                                <span style={{ fontSize: '0.75rem', opacity: 0.6, marginLeft: 'auto' }}>
+                                  Canal: <strong style={{ color: '#ff0000' }}>{youtubeChannelName}</strong>
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Canal Avatar e Nome */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '6px' }}>
+                              {youtubeAvatar ? (
+                                <img src={youtubeAvatar} alt="YouTube Avatar" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
+                              ) : (
+                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#222', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold' }}>
+                                  {(youtubeChannelName || 'Y').charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                Publicando no canal: <strong>{youtubeChannelName || 'Canal do YouTube'}</strong>
+                              </span>
+                            </div>
+
+                            {/* Dropdown de Privacidade do YouTube */}
+                            <div className="form-group" style={{ marginBottom: '0px' }}>
+                              <label className="form-label" htmlFor="youtube-privacy" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                Visibilidade do Vídeo (Obrigatório)
+                                <span style={{ fontSize: '0.7rem', color: 'var(--error)' }}>* Requer seleção manual</span>
+                              </label>
+                              <select
+                                id="youtube-privacy"
+                                className="form-input"
+                                value={youtubePrivacy}
+                                onChange={(e) => setYoutubePrivacy(e.target.value)}
+                                style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.82rem' }}
+                              >
+                                <option value="public">Público (Visível para todos)</option>
+                                <option value="unlisted">Não Listado (Apenas quem tem o link)</option>
+                                <option value="private">Privado (Apenas você pode ver)</option>
+                              </select>
+                              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '6px', lineHeight: '1.3' }}>
+                                Nota de Transparência: Para testes de auditoria na console do YouTube, sugerimos manter como <strong>Privado</strong> ou <strong>Não Listado</strong>.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
                         {/* AGENDADOR DE POSTAGEM */}
                         <div className="form-group" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '16px' }}>
                           <div className="scheduler-header">
@@ -1704,6 +1761,11 @@ export default function Dashboard() {
                     hashtags={(caption && caption.match(/#[a-zA-Z0-9_]+/g)) || []}
                     username={tiktokUsername || instagramUsername || "kumarecaps"}
                     avatar={tiktokAvatar}
+                    tiktokUsername={tiktokUsername}
+                    tiktokAvatar={tiktokAvatar}
+                    instagramUsername={instagramUsername}
+                    youtubeChannelName={youtubeChannelName}
+                    youtubeAvatar={youtubeAvatar}
                   />
                 ) : (
                   <div className="mockup-placeholder glass-panel">
@@ -2016,9 +2078,13 @@ export default function Dashboard() {
                   <div className={`conn-item ${tiktokConnected ? 'connected' : 'disconnected'}`} style={{ flexDirection: 'column', alignItems: 'stretch', gap: '12px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                       <div className="conn-info">
-                        <div className="platform-icon tt-icon">
-                          <TikTokIcon size={20} />
-                        </div>
+                        {tiktokConnected && tiktokAvatar ? (
+                          <img src={tiktokAvatar} alt="TikTok Avatar" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                        ) : (
+                          <div className="platform-icon tt-icon">
+                            <TikTokIcon size={20} />
+                          </div>
+                        )}
                         <div>
                           <div className="conn-name">TikTok Sandbox API</div>
                           <div className="conn-status">
@@ -2117,9 +2183,13 @@ export default function Dashboard() {
                   {/* Conector YouTube */}
                   <div className={`conn-item ${youtubeConnected ? 'connected' : 'disconnected'}`}>
                     <div className="conn-info">
-                      <div className="platform-icon yt-icon" style={{ background: 'rgba(255, 0, 0, 0.1)', color: '#ff0000' }}>
-                        <YoutubeIcon size={20} />
-                      </div>
+                      {youtubeConnected && youtubeAvatar ? (
+                        <img src={youtubeAvatar} alt="YouTube Avatar" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                      ) : (
+                        <div className="platform-icon yt-icon" style={{ background: 'rgba(255, 0, 0, 0.1)', color: '#ff0000' }}>
+                          <YoutubeIcon size={20} />
+                        </div>
+                      )}
                       <div>
                         <div className="conn-name">YouTube Shorts API</div>
                         <div className="conn-status">
