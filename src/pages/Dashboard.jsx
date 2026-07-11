@@ -680,7 +680,7 @@ export default function Dashboard() {
     const tiktokLimit = (creatorInfo && creatorInfo.max_video_post_duration_sec) || 600;
     
     if (videoDuration > tiktokLimit) {
-      // Desmarca o TikTok se ele estiver selecionado nas plataformas
+      // Desmarca o TikTok silenciosamente se ele estiver selecionado nas plataformas
       setSelectedPlatforms(prev => prev.filter(p => p !== 'tiktok'));
       
       // Garante que o YouTube está selecionado
@@ -690,9 +690,6 @@ export default function Dashboard() {
       
       // Força o formato de vídeo clássico no YouTube
       setYoutubeFormat('video');
-      
-      // Exibe notificação de aviso
-      alert(`Aviso: Este vídeo tem ${Math.round(videoDuration)} segundos. Como ele excede o limite máximo de ${tiktokLimit} segundos do TikTok, ele foi configurado automaticamente para publicação apenas no YouTube como Vídeo Clássico.`);
     }
     setCreationStep(2);
   };
