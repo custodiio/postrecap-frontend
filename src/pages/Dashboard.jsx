@@ -868,9 +868,8 @@ export default function Dashboard() {
       : new Date().toLocaleString('pt-BR');
     
     // 3. Define legenda para exibição no painel
-    const displayCaption = bgUseCustomPerPlatform 
-      ? (bgTiktokCaption || bgYoutubeTitle || bgCaption)
-      : bgCaption;
+    // Prioridade: legenda do TikTok > título do YouTube > descrição do YouTube > caption geral
+    const displayCaption = bgTiktokCaption || bgYoutubeTitle || bgYoutubeDescription || bgCaption || 'Sem título';
 
     // 3. Criamos o post IMEDIATAMENTE com status de 'Enviando' na fila de posts
     const newPost = {
@@ -1012,16 +1011,21 @@ export default function Dashboard() {
       // 2. Processa upload do YouTube se selecionado, conectado (e se não houve erro anterior)
       if (uploadSuccess && bgSelectedPlatforms.includes('youtube') && youtubeConnected) {
         const formData = new FormData();
+        // Título: sempre prioriza youtubeTitle, fallback para caption geral
+        const ytTitle = bgYoutubeTitle || bgCaption || 'Post Recap Video';
+        // Descrição: sempre prioriza youtubeDescription, fallback para tiktokCaption ou caption geral
+        const ytDescription = bgYoutubeDescription || bgTiktokCaption || bgCaption || '';
+        
         formData.append('email', bgEmail);
-        formData.append('title', bgUseCustomPerPlatform ? (bgYoutubeTitle || bgCaption) : bgCaption);
-        formData.append('description', bgUseCustomPerPlatform ? (bgYoutubeDescription || bgCaption) : bgCaption);
+        formData.append('title', ytTitle);
+        formData.append('description', ytDescription);
         formData.append('tags', bgYoutubeTags);
         formData.append('made_for_kids', bgYoutubeMadeForKids);
-        formData.append('category_id', bgYoutubeCategory);
+        formData.append('category_id', bgYoutubeCategory || '24');
         formData.append('video', bgVideoFile);
         formData.append('post_id', postId);
-        formData.append('privacy_level', bgYoutubePrivacy);
-        formData.append('youtube_format', bgYoutubeFormat);
+        formData.append('privacy_level', bgYoutubePrivacy || 'private');
+        formData.append('youtube_format', bgYoutubeFormat || 'shorts');
 
         try {
           const uploadPromise = () => new Promise((resolve, reject) => {
