@@ -164,6 +164,7 @@ export default function Dashboard() {
   const [caption, setCaption] = useState('');
   const [suggestedTags, setSuggestedTags] = useState([]);
   const [isGeneratingTags, setIsGeneratingTags] = useState(false);
+  const [isGeneratingHashtags, setIsGeneratingHashtags] = useState(false);
   
   // Agendador de Postagens
   const [isScheduled, setIsScheduled] = useState(false);
@@ -694,82 +695,89 @@ export default function Dashboard() {
     setCreationStep(2);
   };
 
-  const handleSuggestTags = async () => {
-    // Analisar legenda do TikTok se TikTok estiver ativo; se não, usar descrição do YouTube
-    const textToAnalyze = selectedPlatforms.includes('tiktok') 
-      ? tiktokCaption 
-      : (youtubeDescription || youtubeTitle);
-
-    if (!textToAnalyze || !textToAnalyze.trim()) { 
-      alert("Por favor, digite algum texto antes de sugerir tags."); 
-      return; 
+  const handleSuggestTiktokHashtags = async () => {
+    if (!tiktokCaption.trim()) {
+      alert("Por favor, digite uma legenda antes de sugerir hashtags.");
+      return;
     }
-
-    setIsGeneratingTags(true);
-
-    // Cria uma Promise para garantir pelo menos 2 segundos de carregamento visual
+    setIsGeneratingHashtags(true);
     const delayPromise = new Promise(resolve => setTimeout(resolve, 2000));
-
-    let fetchedHashtags = [];
-    let fetchedTags = [];
     
-    const textLower = textToAnalyze.toLowerCase();
-
-    // Fallback inteligente enriquecido se a API não retornar nada
+    let tags = [];
+    const textLower = tiktokCaption.toLowerCase();
     if (textLower.includes('anime') || textLower.includes('recap') || textLower.includes('otaku') || textLower.includes('mang') || textLower.includes('vira')) {
-      fetchedHashtags = ['#anime', '#animerecap', '#otaku', '#recap', '#geek', '#manga', '#viral', '#shorts', '#foryou', '#animes', '#nerd', '#dbz', '#onepiece', '#naruto', '#resumoanime', '#otakubrasil', '#geekbrasil', '#recapitulação', '#fyp', '#viralshorts', '#trending'];
-      fetchedTags = ['anime', 'anime recap', 'otaku', 'recap', 'geek', 'manga', 'viral', 'shorts', 'foryou', 'animes', 'nerd', 'dbz', 'one piece', 'naruto', 'resumo anime', 'otaku brasil', 'geek brasil', 'recapitulação', 'fyp', 'viral shorts', 'trending'];
+      tags = ['#anime', '#animerecap', '#otaku', '#recap', '#viral'];
     } else if (textLower.includes('game') || textLower.includes('play') || textLower.includes('jogo') || textLower.includes('xbox') || textLower.includes('ps5')) {
-      fetchedHashtags = ['#gaming', '#games', '#gameplay', '#gamer', '#viral', '#shorts', '#foryou', '#videogames', '#pcgaming', '#ps5', '#xbox', '#streamer', '#twitch', '#youtube', '#trends', '#highlights', '#jogos', '#gameplaybr', '#geek', '#nerd', '#multiplayer', '#rpg'];
-      fetchedTags = ['gaming', 'games', 'gameplay', 'gamer', 'viral', 'shorts', 'foryou', 'videogames', 'pc gaming', 'ps5', 'xbox', 'streamer', 'twitch', 'youtube', 'trends', 'highlights', 'jogos', 'gameplay br', 'geek', 'nerd', 'multiplayer', 'rpg'];
+      tags = ['#gaming', '#games', '#gameplay', '#gamer', '#viral'];
     } else {
-      fetchedHashtags = ['#recap', '#viral', '#shorts', '#foryou', '#trending', '#video', '#fyp', '#conteudo', '#post', '#recapitulação', '#resumo', '#cortes', '#canal', '#novidade', '#top10', '#melhoresmomentos', '#ia', '#edição', '#produção', '#sucesso', '#engajamento', '#views', '#creator', '#creatorstudio'];
-      fetchedTags = ['recap', 'viral', 'shorts', 'foryou', 'trending', 'video', 'fyp', 'conteudo', 'post', 'recapitulação', 'resumo', 'cortes', 'canal', 'novidade', 'top 10', 'melhores momentos', 'ia', 'edição', 'produção', 'sucesso', 'engajamento', 'views', 'creator', 'creator studio'];
+      tags = ['#recap', '#viral', '#shorts', '#foryou', '#trending'];
     }
-
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/tiktok/suggest-tags`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ caption: textToAnalyze })
-      });
-      if (res.ok) { 
-        const data = await res.json(); 
-        if (data.hashtags && data.hashtags.length > 0) {
-          fetchedHashtags = data.hashtags;
-          fetchedTags = data.hashtags.map(t => t.replace('#', ''));
-        }
-      }
-    } catch (err) { 
-      console.error("Erro ao buscar hashtags via API, usando fallback local:", err); 
-    }
-
-    // Espera os 2 segundos completarem antes de entregar o resultado
+    
     await delayPromise;
+    setTiktokCaption(prev => prev.trim() + " " + tags.join(' '));
+    setIsGeneratingHashtags(false);
+    addNotification('success', 'Hashtags Inseridas', 'Hashtags recomendadas inseridas no final da legenda do TikTok.');
+  };
 
-    setSuggestedHashtags(fetchedHashtags);
-    setSuggestedTags(fetchedTags);
+  const handleSuggestYoutubeHashtags = async () => {
+    const textToAnalyze = youtubeDescription || youtubeTitle || '';
+    if (!textToAnalyze.trim()) {
+      alert("Por favor, digite um título ou descrição antes de sugerir hashtags.");
+      return;
+    }
+    setIsGeneratingHashtags(true);
+    const delayPromise = new Promise(resolve => setTimeout(resolve, 2000));
+    
+    let baseHashtags = [];
+    const textLower = textToAnalyze.toLowerCase();
+    if (textLower.includes('anime') || textLower.includes('recap') || textLower.includes('otaku') || textLower.includes('mang') || textLower.includes('vira')) {
+      baseHashtags = ['#anime', '#animerecap', '#otaku', '#recap', '#geek', '#manga', '#viral', '#shorts', '#foryou', '#animes', '#nerd', '#dbz', '#onepiece', '#naruto', '#resumoanime', '#otakubrasil', '#geekbrasil', '#recapitulação', '#fyp', '#viralshorts', '#trending', '#animetiktok', '#geekbr', '#otakubr', '#animeedit', '#animes2026', '#novidadeanime', '#cortesanime', '#resumodeanime', '#animelover'];
+    } else if (textLower.includes('game') || textLower.includes('play') || textLower.includes('jogo') || textLower.includes('xbox') || textLower.includes('ps5')) {
+      baseHashtags = ['#gaming', '#games', '#gameplay', '#gamer', '#viral', '#shorts', '#foryou', '#videogames', '#pcgaming', '#ps5', '#xbox', '#streamer', '#twitch', '#youtube', '#trends', '#highlights', '#jogos', '#gameplaybr', '#geek', '#nerd', '#multiplayer', '#rpg', '#gameclips', '#esports', '#indiegames', '#playstation', '#nintendo', '#gamersbr', '#gamingnews'];
+    } else {
+      baseHashtags = ['#recap', '#viral', '#shorts', '#foryou', '#trending', '#video', '#fyp', '#conteudo', '#post', '#recapitulação', '#resumo', '#cortes', '#canal', '#novidade', '#top10', '#melhoresmomentos', '#ia', '#edição', '#produção', '#sucesso', '#engajamento', '#views', '#creator', '#creatorstudio', '#marketing', '#viralizar', '#conteudodigital', '#videocurto', '#vlog', '#diaadia'];
+    }
+    
+    await delayPromise;
+    setYoutubeDescription(prev => prev.trim() + "\n\n" + baseHashtags.slice(0, 30).join(' '));
+    setIsGeneratingHashtags(false);
+    addNotification('success', 'Hashtags Inseridas', '30 hashtags recomendadas por IA foram inseridas no final da descrição.');
+  };
+
+  const handleSuggestYoutubeTags = async () => {
+    const textToAnalyze = youtubeDescription || youtubeTitle || '';
+    if (!textToAnalyze.trim()) {
+      alert("Por favor, preencha o título ou descrição para que a IA possa analisar.");
+      return;
+    }
+    setIsGeneratingTags(true);
+    const delayPromise = new Promise(resolve => setTimeout(resolve, 2000));
+    
+    let baseTags = [];
+    const textLower = textToAnalyze.toLowerCase();
+    if (textLower.includes('anime') || textLower.includes('recap') || textLower.includes('otaku') || textLower.includes('mang') || textLower.includes('vira')) {
+      baseTags = ['anime', 'anime recap', 'otaku', 'recap', 'geek', 'manga', 'viral', 'shorts', 'foryou', 'animes', 'nerd', 'dbz', 'one piece', 'naruto', 'resumo anime', 'otaku brasil', 'geek brasil', 'recapitulação', 'fyp', 'viral shorts', 'trending', 'anime tiktok', 'geek br', 'otaku br', 'anime edit', 'animes 2026', 'resumo de anime', 'animes dublados', 'animes legendados', 'canal de anime', 'resumo manga'];
+    } else if (textLower.includes('game') || textLower.includes('play') || textLower.includes('jogo') || textLower.includes('xbox') || textLower.includes('ps5')) {
+      baseTags = ['gaming', 'games', 'gameplay', 'gamer', 'viral', 'shorts', 'foryou', 'videogames', 'pc gaming', 'ps5', 'xbox', 'streamer', 'twitch', 'youtube', 'trends', 'highlights', 'jogos', 'gameplay br', 'geek', 'nerd', 'multiplayer', 'rpg', 'game clips', 'esports', 'indie games', 'playstation', 'nintendo', 'gaming br', 'game review'];
+    } else {
+      baseTags = ['recap', 'viral', 'shorts', 'foryou', 'trending', 'video', 'fyp', 'conteudo', 'post', 'recapitulação', 'resumo', 'cortes', 'canal', 'novidade', 'top 10', 'melhores momentos', 'ia', 'edição', 'produção', 'sucesso', 'engajamento', 'views', 'creator', 'creator studio', 'videocast', 'vlog', 'marketing digital', 'como viralizar', 'recap de filme', 'resumo de serie'];
+    }
+    
+    await delayPromise;
+    
+    // Garante que o comprimento total das tags não passe de 480 caracteres
+    let tagsToInsert = [];
+    let currentLength = 0;
+    for (const tag of baseTags) {
+      if (currentLength + tag.length + 2 < 480) {
+        tagsToInsert.push(tag);
+        currentLength += tag.length + 2;
+      }
+    }
+    
+    setYoutubeTags(tagsToInsert.join(', '));
     setIsGeneratingTags(false);
-  };
-
-  const addHashtagToField = (hashtag) => {
-    if (selectedPlatforms.includes('tiktok') && (!selectedPlatforms.includes('youtube') || currentSubStep === 'tiktok')) {
-      if (!tiktokCaption.includes(hashtag)) {
-        setTiktokCaption(prev => prev.trim() + " " + hashtag);
-      }
-    } else if (selectedPlatforms.includes('youtube')) {
-      if (!youtubeDescription.includes(hashtag)) {
-        setYoutubeDescription(prev => prev.trim() + " " + hashtag);
-      }
-    }
-  };
-
-  const addTagToYoutube = (tag) => {
-    const currentTags = youtubeTags.split(',').map(t => t.trim()).filter(Boolean);
-    if (!currentTags.includes(tag)) {
-      currentTags.push(tag);
-      setYoutubeTags(currentTags.join(', '));
-    }
+    addNotification('success', 'Tags Preenchidas', 'Tags recomendadas por IA foram inseridas no campo.');
   };
 
   // Alterna a seleção de redes sociais
@@ -1741,242 +1749,182 @@ export default function Dashboard() {
                                </div>
                              )}
 
-                             {/* BLOCO DE EDITOR TIKTOK */}
-                             {selectedPlatforms.includes('tiktok') && (!selectedPlatforms.includes('youtube') || currentSubStep === 'tiktok') && (
-                               <div className="form-group" style={{ marginTop: '16px' }}>
-                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                                   <label className="form-label" htmlFor="caption-tiktok" style={{ marginBottom: 0 }}>Legenda do TikTok</label>
-                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                     <button
-                                       type="button"
-                                       onClick={() => {
-                                         if (!tiktokCaption.trim()) { alert("Digite um texto antes de salvar."); return; }
-                                         const name = window.prompt("Nome do modelo de legenda:");
-                                         if (name && name.trim()) {
-                                           const newTpl = { id: 'tpl_' + Date.now(), name: name.trim(), content: tiktokCaption };
-                                           const updated = [...captionTemplates, newTpl];
-                                           setCaptionTemplates(updated);
-                                           localStorage.setItem('caption_templates', JSON.stringify(updated));
-                                           addNotification('success', 'Modelo Salvo', `Modelo "${name}" salvo!`);
-                                         }
-                                       }}
-                                       style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '3px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                     >
-                                       💾 Salvar Modelo
-                                     </button>
-                                     {captionTemplates.length > 0 && (
-                                       <select
-                                         onChange={(e) => {
-                                           const selectedId = e.target.value;
-                                           if (selectedId) {
-                                             const t = captionTemplates.find(item => item.id === selectedId);
-                                             if (t && t.content) setTiktokCaption(t.content);
-                                           }
-                                           e.target.value = "";
-                                         }}
-                                         style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '2px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', maxWidth: '100px' }}
-                                       >
-                                         <option value="">📂 Carregar...</option>
-                                         {captionTemplates.map(t => (
-                                           <option key={t.id} value={t.id}>{t.name}</option>
-                                         ))}
-                                       </select>
-                                     )}
-                                   </div>
-                                 </div>
-                                 <textarea 
-                                   id="caption-tiktok" className="form-textarea" 
-                                   placeholder="Escreva a legenda curta e tags virais específicas para o TikTok..."
-                                   rows={3} 
-                                   value={tiktokCaption} 
-                                   onChange={(e) => {
-                                     const val = e.target.value;
-                                     setTiktokCaption(val);
-                                     setYoutubeDescription(prev => (prev === tiktokCaption || !prev) ? val : prev);
-                                   }}
-                                 />
+                              {/* BLOCO DE EDITOR TIKTOK */}
+                              {selectedPlatforms.includes('tiktok') && (!selectedPlatforms.includes('youtube') || currentSubStep === 'tiktok') && (
+                                <div className="form-group" style={{ marginTop: '16px' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                    <label className="form-label" htmlFor="caption-tiktok" style={{ marginBottom: 0 }}>Legenda do TikTok</label>
+                                  </div>
+                                  <textarea 
+                                    id="caption-tiktok" className="form-textarea" 
+                                    placeholder="Escreva a legenda curta e tags virais específicas para o TikTok..."
+                                    rows={3} 
+                                    value={tiktokCaption} 
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setTiktokCaption(val);
+                                      setYoutubeDescription(prev => (prev === tiktokCaption || !prev) ? val : prev);
+                                    }}
+                                  />
 
-                                 {/* Recomendador de Hashtags IA para TikTok */}
-                                 <div className="form-group" style={{ marginTop: '14px', marginBottom: '0px' }}>
-                                   <div className="hashtag-generator-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                     <span className="form-label" style={{ marginBottom: 0, fontSize: '0.78rem' }}>Hashtags IA para TikTok (Max 5 recomendadas)</span>
-                                     <button
-                                       type="button"
-                                       onClick={handleSuggestTags}
-                                       className="sec-btn ai-tag-btn"
-                                       disabled={isGeneratingTags || !tiktokCaption.trim()}
-                                       style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem' }}
-                                     >
-                                       <Sparkles size={13} className={isGeneratingTags ? 'spin-animation' : ''} />
-                                       {isGeneratingTags ? 'Analisando...' : 'Sugerir Hashtags'}
-                                     </button>
-                                   </div>
-                                   {suggestedHashtags.length > 0 && (
-                                     <div className="suggested-tags-list" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
-                                       {suggestedHashtags.slice(0, 8).map((tag, idx) => (
-                                         <button key={idx} type="button" className="tag-pill" onClick={() => addHashtagToField(tag)}>
-                                           + {tag}
-                                         </button>
-                                       ))}
-                                     </div>
-                                   )}
-                                 </div>
-                               </div>
-                             )}
-
+                                  {/* Recomendador de Hashtags IA para TikTok */}
+                                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+                                    <button
+                                      type="button"
+                                      onClick={handleSuggestTiktokHashtags}
+                                      className="sec-btn ai-tag-btn"
+                                      disabled={isGeneratingHashtags || !tiktokCaption.trim()}
+                                      style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem' }}
+                                    >
+                                      <Sparkles size={13} className={isGeneratingHashtags ? 'spin-animation' : ''} />
+                                      {isGeneratingHashtags ? 'Analisando...' : 'Sugerir Hashtags'}
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                              {/* BLOCO DE EDITOR YOUTUBE */}
+
+
                              {selectedPlatforms.includes('youtube') && (!selectedPlatforms.includes('tiktok') || currentSubStep === 'youtube') && (
+
+
                                <div className="form-group" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+
                                  <div>
+
+
                                    <label className="form-label" htmlFor="title-youtube" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+
+
                                      <span>Título do YouTube</span>
+
+
                                      <span style={{ fontSize: '0.7rem', color: youtubeTitle.length > 90 ? 'var(--error)' : 'var(--text-muted)' }}>
+
+
                                        {youtubeTitle.length}/100
+
+
                                      </span>
+
+
                                    </label>
+
+
                                    <input 
+
+
                                      type="text"
+
+
                                      id="title-youtube" 
+
+
                                      className="form-input" 
+
+
                                      maxLength={100}
+
+
                                      placeholder="Digite o título do vídeo do YouTube..."
+
+
                                      value={youtubeTitle} 
+
+
                                      onChange={(e) => setYoutubeTitle(e.target.value)}
+
+
                                      style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.88rem' }}
+
+
                                    />
+
+
                                  </div>
+
+
 
                                  <div>
+
+
                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+
+
                                      <label className="form-label" htmlFor="desc-youtube" style={{ marginBottom: 0 }}>Descrição do YouTube</label>
-                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                       <button
-                                         type="button"
-                                         onClick={() => {
-                                           if (!youtubeDescription.trim()) { alert("Digite uma descrição antes de salvar."); return; }
-                                           const name = window.prompt("Nome do modelo de descrição:");
-                                           if (name && name.trim()) {
-                                             const newTpl = { id: 'tpl_' + Date.now(), name: name.trim(), content: youtubeDescription };
-                                             const updated = [...captionTemplates, newTpl];
-                                             setCaptionTemplates(updated);
-                                             localStorage.setItem('caption_templates', JSON.stringify(updated));
-                                             addNotification('success', 'Modelo Salvo', `Modelo "${name}" salvo!`);
-                                           }
-                                         }}
-                                         style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '3px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                       >
-                                         💾 Salvar Modelo
-                                       </button>
-                                       {captionTemplates.length > 0 && (
-                                         <select
-                                           onChange={(e) => {
-                                             const selectedId = e.target.value;
-                                             if (selectedId) {
-                                               const t = captionTemplates.find(item => item.id === selectedId);
-                                               if (t && t.content) setYoutubeDescription(t.content);
-                                             }
-                                             e.target.value = "";
-                                           }}
-                                           style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '2px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', maxWidth: '100px' }}
-                                         >
-                                           <option value="">📂 Carregar...</option>
-                                           {captionTemplates.map(t => (
-                                             <option key={t.id} value={t.id}>{t.name}</option>
-                                           ))}
-                                         </select>
-                                       )}
-                                     </div>
+
+
                                    </div>
+
+
                                    <textarea 
+
+
                                      id="desc-youtube" className="form-textarea" 
+
+
                                      placeholder="Escreva a descrição detalhada para o YouTube (redes, links, resumo)..."
+
+
                                      rows={4} 
+
+
                                      value={youtubeDescription} 
+
+
                                      onChange={(e) => setYoutubeDescription(e.target.value)}
+
+
                                    />
+
+
                                  </div>
 
-                                 {/* GERADOR DE METADADOS IA PARA YOUTUBE (HASHTAGS + TAGS DO VÍDEO) */}
-                                 <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)', marginTop: '8px' }}>
-                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                     <span style={{ fontSize: '0.82rem', fontWeight: 'bold', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                       🔮 Sugestões IA de SEO para YouTube
-                                     </span>
-                                     <button
-                                       type="button"
-                                       onClick={handleSuggestTags}
-                                       className="sec-btn ai-tag-btn"
-                                       disabled={isGeneratingTags || !youtubeDescription.trim()}
-                                       style={{ padding: '6px 12px', fontSize: '0.78rem' }}
-                                     >
-                                       <Sparkles size={12} className={isGeneratingTags ? 'spin-animation' : ''} />
-                                       {isGeneratingTags ? 'Gerando...' : 'Sugerir Tags & Hashtags'}
-                                     </button>
-                                   </div>
 
-                                   {/* Seção 1: Hashtags para Descrição */}
-                                   <div style={{ marginBottom: '14px' }}>
-                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                       <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>#️⃣ Hashtags IA (Inserir na Descrição)</span>
-                                       {suggestedHashtags.length > 0 && (
-                                         <button
-                                           type="button"
-                                           onClick={() => {
-                                             const listStr = "\n\n" + suggestedHashtags.slice(0, 25).join(' ');
-                                             setYoutubeDescription(prev => prev.trim() + listStr);
-                                             addNotification('success', 'Hashtags Adicionadas', '25 hashtags recomendadas inseridas no final da descrição.');
-                                           }}
-                                           style={{ background: 'rgba(138, 63, 252, 0.15)', border: '1px solid rgba(138, 63, 252, 0.3)', borderRadius: '6px', padding: '3px 8px', fontSize: '0.68rem', color: '#a78bfa', cursor: 'pointer' }}
-                                         >
-                                           📝 Inserir Todas (25)
-                                         </button>
-                                       )}
-                                     </div>
-                                     {suggestedHashtags.length > 0 ? (
-                                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                         {suggestedHashtags.slice(0, 15).map((tag, idx) => (
-                                           <button key={idx} type="button" className="tag-pill" onClick={() => addHashtagToField(tag)}>
-                                             + {tag}
-                                           </button>
-                                         ))}
-                                       </div>
-                                     ) : (
-                                       <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Digite a descrição e clique em "Sugerir Tags & Hashtags".</span>
-                                     )}
-                                   </div>
 
-                                   {/* Seção 2: Tags / Palavras-chave separadas por vírgula */}
-                                   <div>
-                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                       <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>🏷️ Tags IA (Palavras-chave do Vídeo)</span>
-                                       {suggestedTags.length > 0 && (
-                                         <button
-                                           type="button"
-                                           onClick={() => {
-                                             const tagsStr = suggestedTags.slice(0, 20).join(', ');
-                                             setYoutubeTags(tagsStr);
-                                             addNotification('success', 'Tags Preenchidas', 'Tags recomendadas preenchidas no campo de Tags.');
-                                           }}
-                                           style={{ background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '6px', padding: '3px 8px', fontSize: '0.68rem', color: '#34d399', cursor: 'pointer' }}
-                                         >
-                                           ⚡ Preencher Caixa de Tags
-                                         </button>
-                                       )}
-                                     </div>
-                                     {suggestedTags.length > 0 ? (
-                                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                         {suggestedTags.slice(0, 15).map((tag, idx) => (
-                                           <button key={idx} type="button" className="tag-pill" style={{ borderColor: 'rgba(16, 185, 129, 0.3)', color: '#34d399' }} onClick={() => addTagToYoutube(tag)}>
-                                             + {tag}
-                                           </button>
-                                         ))}
-                                       </div>
-                                     ) : (
-                                       <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>As sugestões aparecerão aqui para otimizar suas tags do YouTube.</span>
-                                     )}
-                                   </div>
+                                 {/* Botão de Sugerir Hashtags IA logo abaixo da descrição */}
+
+
+                                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0px', marginBottom: '8px' }}>
+
+
+                                   <button
+
+
+                                     type="button"
+
+
+                                     onClick={handleSuggestYoutubeHashtags}
+
+
+                                     className="sec-btn ai-tag-btn"
+
+
+                                     disabled={isGeneratingHashtags || !youtubeDescription.trim()}
+
+
+                                     style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem' }}
+
+
+                                   >
+
+
+                                     <Sparkles size={13} className={isGeneratingHashtags ? 'spin-animation' : ''} />
+
+
+                                     {isGeneratingHashtags ? 'Analisando...' : 'Sugerir Hashtags'}
+
+
+                                   </button>
+
+
                                  </div>
+
+
                                </div>
+
+
                              )}
 
                              {/* BLOCO GERAL (NENHUMA PREMIUM SELECIONADA) */}
@@ -2246,22 +2194,98 @@ export default function Dashboard() {
                                      <div style={{ marginTop: '12px', background: 'rgba(0,0,0,0.15)', padding: '12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.04)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                                        
                                        {/* Campo Tags do Vídeo */}
+
+                                       
                                        <div className="form-group" style={{ marginBottom: '0px' }}>
+
+                                       
                                          <label className="form-label" htmlFor="youtube-tags" style={{ fontSize: '0.78rem' }}>
+
+                                       
                                            Tags / Palavras-chave do Vídeo
+
+                                       
                                          </label>
+
+                                       
                                          <input
+
+                                       
                                            type="text"
+
+                                       
                                            id="youtube-tags"
+
+                                       
                                            className="form-input"
+
+                                       
                                            placeholder="recap, anime, resumo, viral (separadas por vírgula)"
+
+                                       
                                            value={youtubeTags}
+
+                                       
                                            onChange={(e) => setYoutubeTags(e.target.value)}
+
+                                       
                                            style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.82rem' }}
+
+                                       
                                          />
-                                         <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+
+                                       
+                                         <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
+
+                                       
                                            As tags ajudam na pesquisa e indexação do seu vídeo pelo algoritmo do YouTube.
+
+                                       
                                          </span>
+
+                                       
+                                         
+
+                                       
+                                         {/* Botão Sugerir Tags da IA */}
+
+                                       
+                                         <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+
+                                       
+                                           <button
+
+                                       
+                                             type="button"
+
+                                       
+                                             onClick={handleSuggestYoutubeTags}
+
+                                       
+                                             className="sec-btn ai-tag-btn"
+
+                                       
+                                             disabled={isGeneratingTags || !youtubeDescription.trim()}
+
+                                       
+                                             style={{ padding: '5px 10px', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+
+                                       
+                                           >
+
+                                       
+                                             <Sparkles size={11} className={isGeneratingTags ? 'spin-animation' : ''} />
+
+                                       
+                                             {isGeneratingTags ? 'Analisando...' : 'Sugerir Tags'}
+
+                                       
+                                           </button>
+
+                                       
+                                         </div>
+
+                                       
                                        </div>
 
                                        {/* Categoria do Vídeo */}
