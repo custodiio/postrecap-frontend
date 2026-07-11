@@ -47,7 +47,11 @@ export default function TikTokMockup({
   instagramUsername,
   youtubeChannelName,
   youtubeAvatar,
-  youtubeFormat
+  youtubeBanner,
+  youtubeFormat,
+  youtubeTitle,
+  youtubeDescription,
+  tiktokCaption
 }) {
   const [platform, setPlatform] = useState('tiktok'); // 'tiktok', 'instagram', 'youtube'
   const [viewMode, setViewMode] = useState('fyp'); // tiktok: 'fyp'/'profile', instagram: 'reels'/'profile', youtube: 'shorts'/'video'/'profile'
@@ -363,7 +367,7 @@ export default function TikTokMockup({
                 <span style={{ background: 'var(--tiktok-cyan)', color: '#000', fontSize: '0.55rem', padding: '1px 3px', borderRadius: '2px', fontWeight: '800' }}>SANDBOX</span>
               </div>
               <div style={{ fontSize: '0.8rem', lineHeight: '1.4', marginBottom: '8px', maxHeight: '70px', overflowY: 'auto', paddingRight: '4px' }}>
-                {caption || "Legenda do seu recap no feed..."}{' '}
+                {tiktokCaption || caption || "Legenda do seu recap no feed..."}{' '}
                 {hashtags.map((tag, idx) => (
                   <span key={idx} style={{ color: 'var(--tiktok-cyan)', fontWeight: '600', marginRight: '4px' }}>{tag}</span>
                 ))}
@@ -697,23 +701,24 @@ export default function TikTokMockup({
 
             {/* Descrição e Canal Base YT */}
             <div style={{ position: 'absolute', left: '12px', bottom: '26px', right: '65px', zIndex: 5, color: '#fff', textAlign: 'left' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', width: '100%', overflow: 'hidden' }}>
                 <div style={{
                   width: '28px', height: '28px', borderRadius: '50%', background: '#fff',
                   backgroundImage: avatar ? `url(${avatar})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: '10px', fontWeight: 'bold'
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: '10px', fontWeight: 'bold',
+                  flexShrink: 0
                 }}>
                   {!avatar && (username || "K").charAt(0).toUpperCase()}
                 </div>
-                <span style={{ fontWeight: '700', fontSize: '0.8rem' }}>@{username}</span>
+                <span style={{ fontWeight: '700', fontSize: '0.78rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '75px' }}>@{username}</span>
                 <span style={{
-                  background: '#ff0000', color: '#fff', fontSize: '0.7rem', padding: '3px 8px',
-                  borderRadius: '16px', fontWeight: '700', cursor: 'pointer'
+                  background: '#ff0000', color: '#fff', fontSize: '0.62rem', padding: '2px 6px',
+                  borderRadius: '12px', fontWeight: '700', cursor: 'pointer', flexShrink: 0
                 }}>Inscrever-se</span>
               </div>
 
               <div style={{ fontSize: '0.8rem', lineHeight: '1.4', marginBottom: '4px', maxHeight: '55px', overflowY: 'auto' }}>
-                {caption || "Legenda do seu Shorts do YouTube..."}{' '}
+                {youtubeTitle || caption || "Legenda do seu Shorts do YouTube..."}{' '}
                 {hashtags.map((tag, idx) => (
                   <span key={idx} style={{ color: '#38bdf8', fontWeight: '600', marginRight: '4px' }}>{tag}</span>
                 ))}
@@ -748,7 +753,7 @@ export default function TikTokMockup({
             {/* Conteúdo de Detalhes com Scroll */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '12px', textAlign: 'left' }}>
               <h4 style={{ fontSize: '0.85rem', fontWeight: 'bold', margin: '0 0 6px 0', color: '#fff', lineHeight: '1.3' }}>
-                {caption || "Título do vídeo do YouTube..."}
+                {((youtubeTitle || caption) ? (youtubeTitle || caption).substring(0, 75) + ((youtubeTitle || caption).length > 75 ? '...' : '') : "Título do vídeo do YouTube...")}
               </h4>
               <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
                 12K visualizações • há 2 horas
@@ -770,30 +775,39 @@ export default function TikTokMockup({
               </div>
 
               {/* Canal do Criador */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', padding: '8px 10px', borderRadius: '8px', marginBottom: '14px', border: '1px solid rgba(255,255,255,0.04)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', padding: '8px 10px', borderRadius: '8px', marginBottom: '12px', border: '1px solid rgba(255,255,255,0.04)', gap: '8px', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                   <div style={{
                     width: '28px', height: '28px', borderRadius: '50%', background: '#fff',
                     backgroundImage: avatar ? `url(${avatar})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: '10px', fontWeight: 'bold'
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: '10px', fontWeight: 'bold',
+                    flexShrink: 0
                   }}>
                     {!avatar && (username || "K").charAt(0).toUpperCase()}
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '0.78rem', fontWeight: 'bold', color: '#fff' }}>{username}</span>
-                    <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>124K inscritos</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '90px' }}>{username}</span>
+                    <span style={{ fontSize: '0.58rem', color: 'var(--text-muted)' }}>124K inscritos</span>
                   </div>
                 </div>
-                <span style={{ background: '#fff', color: '#000', fontSize: '0.68rem', padding: '4px 10px', borderRadius: '14px', fontWeight: 'bold', cursor: 'pointer' }}>
+                <span style={{ background: '#fff', color: '#000', fontSize: '0.62rem', padding: '3px 8px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}>
                   Inscrever-se
                 </span>
+              </div>
+
+              {/* Descrição do Vídeo (Estilo YouTube) */}
+              <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: '8px', padding: '10px', marginBottom: '12px', fontSize: '0.7rem', color: '#f1f1f1', textAlign: 'left' }}>
+                <span style={{ fontWeight: 'bold', display: 'block', marginBottom: '4px', color: '#fff' }}>Descrição</span>
+                <p style={{ margin: 0, opacity: 0.85, whiteSpace: 'pre-wrap', lineHeight: '1.4', maxHeight: '70px', overflowY: 'auto' }}>
+                  {youtubeDescription || caption || "Sem descrição."}
+                </p>
               </div>
 
               {/* Caixa de Comentários */}
               <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '10px' }}>
                 <div style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>Comentários (243)</div>
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
-                  <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'var(--primary)', fontSize: '8px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>A</div>
+                  <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'var(--primary)', fontSize: '8px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', flexShrink: 0 }}>A</div>
                   <p style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.3' }}>
                     Muito bom o recap desse anime! A edição ficou incrível. 👏
                   </p>
@@ -807,10 +821,19 @@ export default function TikTokMockup({
         {platform === 'youtube' && viewMode === 'profile' && (
           <div style={{ width: '100%', height: '100%', background: '#0f0f0f', color: '#fff', overflowY: 'auto', padding: '38px 0 15px' }}>
             {/* Banner do Canal */}
-            <div style={{ width: '100%', height: '55px', background: 'linear-gradient(90deg, #ff0000 0%, #1e1b4b 100%)', position: 'relative' }}>
-              <div style={{ position: 'absolute', top: '10px', left: '15px', color: '#fff', fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(0,0,0,0.5)', padding: '2px 6px', borderRadius: '4px' }}>
-                Post Recap Studio
-              </div>
+            <div style={{ 
+              width: '100%', 
+              height: '55px', 
+              backgroundImage: youtubeBanner ? `url(${youtubeBanner})` : 'linear-gradient(90deg, #ff0000 0%, #1e1b4b 100%)', 
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              position: 'relative' 
+            }}>
+              {!youtubeBanner && (
+                <div style={{ position: 'absolute', top: '10px', left: '15px', color: '#fff', fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(0,0,0,0.5)', padding: '2px 6px', borderRadius: '4px' }}>
+                  Post Recap Studio
+                </div>
+              )}
             </div>
 
             {/* Informações Principais do Canal */}
@@ -819,7 +842,8 @@ export default function TikTokMockup({
                 <div style={{
                   width: '52px', height: '52px', borderRadius: '50%', border: '1px solid rgba(255, 255, 255, 0.1)', background: '#222',
                   backgroundImage: avatar ? `url(${avatar})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 'bold'
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 'bold',
+                  flexShrink: 0
                 }}>
                   {!avatar && (username || "K").charAt(0).toUpperCase()}
                 </div>

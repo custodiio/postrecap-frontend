@@ -119,6 +119,7 @@ export default function Dashboard() {
   const [youtubeConnected, setYoutubeConnected] = useState(false);
   const [youtubeChannelName, setYoutubeChannelName] = useState('');
   const [youtubeAvatar, setYoutubeAvatar] = useState('');
+  const [youtubeBanner, setYoutubeBanner] = useState('');
   const [youtubePrivacy, setYoutubePrivacy] = useState('private');
   const [youtubeFormat, setYoutubeFormat] = useState('shorts');
   
@@ -193,6 +194,25 @@ export default function Dashboard() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    const isTiktok = selectedPlatforms.includes('tiktok');
+    const isYoutube = selectedPlatforms.includes('youtube');
+    
+    if (isTiktok && isYoutube) {
+      setUseCustomPerPlatform(true);
+      if (activeEditorTab !== 'tiktok' && activeEditorTab !== 'youtube') {
+        setActiveEditorTab('tiktok');
+      }
+    } else {
+      setUseCustomPerPlatform(false);
+      if (isTiktok) {
+        setActiveEditorTab('tiktok');
+      } else if (isYoutube) {
+        setActiveEditorTab('youtube');
+      }
+    }
+  }, [selectedPlatforms, activeEditorTab]);
 
   useEffect(() => {
     const email = localStorage.getItem('user_email');
@@ -410,6 +430,7 @@ export default function Dashboard() {
         if (data.connected) {
           setYoutubeChannelName(data.channel_name);
           setYoutubeAvatar(data.avatar || '');
+          setYoutubeBanner(data.banner || '');
           if (!selectedPlatforms.includes('youtube')) {
             setSelectedPlatforms(prev => [...prev, 'youtube']);
           }
@@ -508,6 +529,7 @@ export default function Dashboard() {
             setYoutubeConnected(false);
             setYoutubeChannelName('');
             setYoutubeAvatar('');
+            setYoutubeBanner('');
             setSelectedPlatforms(prev => prev.filter(p => p !== 'youtube'));
             setUploadMessage('YouTube desconectado com sucesso!');
             setTimeout(() => setUploadMessage(''), 4000);
@@ -650,17 +672,50 @@ export default function Dashboard() {
   };
 
   const handleSuggestTags = async () => {
-    if (!caption) { alert("Por favor, digite uma legenda antes de sugerir hashtags."); return; }
+    const textToAnalyze = useCustomPerPlatform 
+      ? (activeEditorTab === 'tiktok' ? tiktokCaption : youtubeDescription)
+      : caption;
+
+    if (!textToAnalyze || !textToAnalyze.trim()) { 
+      alert("Por favor, digite algum texto antes de sugerir hashtags."); 
+      return; 
+    }
+
     setIsGeneratingTags(true);
+
+    // Cria uma Promise para garantir pelo menos 2 segundos de carregamento
+    const delayPromise = new Promise(resolve => setTimeout(resolve, 2000));
+
+    let fetchedTags = [];
     try {
       const res = await fetch(`${API_BASE_URL}/api/tiktok/suggest-tags`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ caption })
+        body: JSON.stringify({ caption: textToAnalyze })
       });
-      if (res.ok) { const data = await res.json(); setSuggestedTags(data.hashtags); }
-    } catch (err) { console.error("Erro ao buscar hashtags:", err); }
-    finally { setIsGeneratingTags(false); }
+      if (res.ok) { 
+        const data = await res.json(); 
+        fetchedTags = data.hashtags || [];
+      }
+    } catch (err) { 
+      console.error("Erro ao buscar hashtags via API, usando fallback local:", err); 
+    }
+
+    // Fallback inteligente se a API não retornar nada
+    if (fetchedTags.length === 0) {
+      const textLower = textToAnalyze.toLowerCase();
+      if (textLower.includes('anime') || textLower.includes('recap') || textLower.includes('otaku') || textLower.includes('mang') || textLower.includes('vira')) {
+        fetchedTags = ['#anime', '#animerecap', '#otaku', '#recap', '#geek', '#manga', '#viral', '#shorts', '#foryou'];
+      } else {
+        fetchedTags = ['#recap', '#viral', '#shorts', '#foryou', '#trending', '#video', '#fyp', '#conteudo', '#post'];
+      }
+    }
+
+    // Espera os 2 segundos completarem antes de entregar o resultado
+    await delayPromise;
+
+    setSuggestedTags(fetchedTags);
+    setIsGeneratingTags(false);
   };
 
   const addTagToCaption = (tag) => {
@@ -744,6 +799,7 @@ export default function Dashboard() {
     const bgVideoThumbnail = videoThumbnail;
     const bgEmail = userEmail;
     const bgYoutubePrivacy = youtubePrivacy;
+    const bgYoutubeFormat = youtubeFormat;
 
     // 1. Geramos um ID único para esse upload concorrente
     const postId = Date.now().toString();
@@ -907,6 +963,7 @@ export default function Dashboard() {
         formData.append('video', bgVideoFile);
         formData.append('post_id', postId);
         formData.append('privacy_level', bgYoutubePrivacy);
+        formData.append('youtube_format', bgYoutubeFormat);
 
         try {
           const uploadPromise = () => new Promise((resolve, reject) => {
@@ -1496,243 +1553,329 @@ export default function Dashboard() {
                            </div>
                          </div>
 
-                        {/* Controle de Customização de Legendas por Rede */}
-                        {selectedPlatforms.length > 1 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', marginTop: '20px', marginBottom: '16px' }}>
-                            <span style={{ fontSize: '0.82rem', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                              ✍️ Customizar legendas por rede social?
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const active = !useCustomPerPlatform;
-                                setUseCustomPerPlatform(active);
-                                if (active) {
-                                  // Inicializa as caixas de texto com o valor atual para poupar trabalho do criador
-                                  setTiktokCaption(caption);
-                                  setYoutubeTitle(caption.substring(0, 70));
-                                  setYoutubeDescription(caption);
-                                  // Define aba ativa
-                                  if (selectedPlatforms.includes('tiktok')) setActiveEditorTab('tiktok');
-                                  else if (selectedPlatforms.includes('youtube')) setActiveEditorTab('youtube');
-                                }
-                              }}
-                              style={{
-                                background: useCustomPerPlatform ? 'var(--primary)' : 'rgba(255,255,255,0.08)',
-                                color: '#fff',
-                                border: 'none',
-                                padding: '5px 12px',
-                                borderRadius: '20px',
-                                fontSize: '0.75rem',
-                                fontWeight: 'bold',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                boxShadow: useCustomPerPlatform ? '0 0 10px rgba(138, 63, 252, 0.4)' : 'none'
-                              }}
-                            >
-                              {useCustomPerPlatform ? 'Sim (Personalizada)' : 'Não (Mesma Legenda)'}
-                            </button>
-                          </div>
-                        )}
+                         {/* Abas horizontais automáticas de legendas por rede */}
+                         {selectedPlatforms.includes('tiktok') && selectedPlatforms.includes('youtube') && (
+                           <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', marginTop: '16px' }}>
+                             <button
+                               type="button"
+                               onClick={() => setActiveEditorTab('tiktok')}
+                               style={{
+                                 flex: 1,
+                                 background: activeEditorTab === 'tiktok' ? 'rgba(255, 0, 80, 0.12)' : 'rgba(255,255,255,0.03)',
+                                 border: activeEditorTab === 'tiktok' ? '1px solid var(--tiktok-magenta)' : '1px solid rgba(255,255,255,0.06)',
+                                 color: activeEditorTab === 'tiktok' ? '#fff' : 'var(--text-secondary)',
+                                 padding: '8px 12px',
+                                 borderRadius: '8px',
+                                 fontSize: '0.8rem',
+                                 fontWeight: 'bold',
+                                 cursor: 'pointer',
+                                 display: 'flex',
+                                 alignItems: 'center',
+                                 justifyContent: 'center',
+                                 gap: '6px',
+                                 transition: 'all 0.2s'
+                               }}
+                             >
+                               <span style={{ color: 'var(--tiktok-magenta)' }}>TikTok</span> Legenda
+                             </button>
+                             <button
+                               type="button"
+                               onClick={() => setActiveEditorTab('youtube')}
+                               style={{
+                                 flex: 1,
+                                 background: activeEditorTab === 'youtube' ? 'rgba(255, 0, 0, 0.12)' : 'rgba(255,255,255,0.03)',
+                                 border: activeEditorTab === 'youtube' ? '1px solid #ff0000' : '1px solid rgba(255,255,255,0.06)',
+                                 color: activeEditorTab === 'youtube' ? '#fff' : 'var(--text-secondary)',
+                                 padding: '8px 12px',
+                                 borderRadius: '8px',
+                                 fontSize: '0.8rem',
+                                 fontWeight: 'bold',
+                                 cursor: 'pointer',
+                                 display: 'flex',
+                                 alignItems: 'center',
+                                 justifyContent: 'center',
+                                 gap: '6px',
+                                 transition: 'all 0.2s'
+                               }}
+                             >
+                               <span style={{ color: '#ff0000' }}>YouTube</span> Título & Descrição
+                             </button>
+                           </div>
+                         )}
 
-                        {/* Abas horizontais no modo de legenda personalizado */}
-                        {useCustomPerPlatform && selectedPlatforms.length > 1 && (
-                          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                            {selectedPlatforms.includes('tiktok') && (
-                              <button
-                                type="button"
-                                onClick={() => setActiveEditorTab('tiktok')}
-                                style={{
-                                  flex: 1,
-                                  background: activeEditorTab === 'tiktok' ? 'rgba(255, 0, 80, 0.15)' : 'rgba(255,255,255,0.03)',
-                                  border: activeEditorTab === 'tiktok' ? '1px solid var(--tiktok-magenta)' : '1px solid rgba(255,255,255,0.06)',
-                                  color: activeEditorTab === 'tiktok' ? '#fff' : 'var(--text-secondary)',
-                                  padding: '8px',
-                                  borderRadius: '6px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 'bold',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '6px',
-                                  transition: 'all 0.2s'
-                                }}
-                              >
-                                <span style={{ color: 'var(--tiktok-magenta)' }}>TikTok</span> Legenda
-                              </button>
-                            )}
-                            {selectedPlatforms.includes('youtube') && (
-                              <button
-                                type="button"
-                                onClick={() => setActiveEditorTab('youtube')}
-                                style={{
-                                  flex: 1,
-                                  background: activeEditorTab === 'youtube' ? 'rgba(255, 0, 0, 0.15)' : 'rgba(255,255,255,0.03)',
-                                  border: activeEditorTab === 'youtube' ? '1px solid #ff0000' : '1px solid rgba(255,255,255,0.06)',
-                                  color: activeEditorTab === 'youtube' ? '#fff' : 'var(--text-secondary)',
-                                  padding: '8px',
-                                  borderRadius: '6px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 'bold',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '6px',
-                                  transition: 'all 0.2s'
-                                }}
-                              >
-                                <span style={{ color: '#ff0000' }}>YouTube</span> Título & Descrição
-                              </button>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Área do Editor de Textos Reativo */}
-                        <div className="form-group" style={{ marginTop: useCustomPerPlatform ? '0px' : '20px' }}>
-                          {!useCustomPerPlatform ? (
-                            <>
-                              <label className="form-label" htmlFor="caption">Legenda / Texto do Post</label>
-                              <textarea 
-                                id="caption" className="form-textarea" 
-                                placeholder="Escreva a legenda comum e as tags para todas as redes..."
-                                rows={3} value={caption} onChange={(e) => setCaption(e.target.value)}
-                              />
-                            </>
-                          ) : activeEditorTab === 'tiktok' ? (
-                            <>
-                              <label className="form-label" htmlFor="caption-tiktok">Legenda do TikTok</label>
-                              <textarea 
-                                id="caption-tiktok" className="form-textarea" 
-                                placeholder="Escreva a legenda curta e tags virais específicas para o TikTok..."
-                                rows={3} value={tiktokCaption} onChange={(e) => setTiktokCaption(e.target.value)}
-                              />
-                            </>
-                          ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                              <div>
-                                <label className="form-label" htmlFor="title-youtube" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  Título do YouTube 
-                                  <span style={{ fontSize: '0.7rem', color: youtubeTitle.length > 90 ? 'var(--error)' : 'var(--text-muted)' }}>
-                                    {youtubeTitle.length}/100
-                                  </span>
-                                </label>
-                                <input 
-                                  type="text"
-                                  id="title-youtube" 
-                                  className="form-input" 
-                                  maxLength={100}
-                                  placeholder="Digite um título curto e chamativo..."
-                                  value={youtubeTitle} 
-                                  onChange={(e) => setYoutubeTitle(e.target.value)}
-                                  style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.88rem' }}
-                                />
-                              </div>
-                              <div>
-                                <label className="form-label" htmlFor="desc-youtube">Descrição do YouTube</label>
-                                <textarea 
-                                  id="desc-youtube" className="form-textarea" 
-                                  placeholder="Escreva a descrição detalhada para o YouTube (redes, links, resumo)..."
-                                  rows={4} value={youtubeDescription} onChange={(e) => setYoutubeDescription(e.target.value)}
-                                />
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Seção de Modelos de Texto/Templates */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px', background: 'rgba(255,255,255,0.01)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.03)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                              <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                📋 Modelos Rápidos
-                              </span>
-                              {!showTemplateSaveInput ? (
-                                <button
-                                  type="button"
-                                  onClick={() => setShowTemplateSaveInput(true)}
-                                  style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.72rem', fontWeight: 'bold', cursor: 'pointer' }}
-                                >
-                                  + Salvar este texto como Modelo
-                                </button>
-                              ) : (
-                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                                  <input
-                                    type="text"
-                                    placeholder="Nome do modelo..."
-                                    value={newTemplateName}
-                                    onChange={(e) => setNewTemplateName(e.target.value)}
-                                    style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '2px 6px', fontSize: '0.7rem', color: '#fff', width: '120px' }}
-                                    className="template-name-input"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={handleSaveTemplate}
-                                    style={{ background: 'var(--primary)', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '0.7rem', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}
-                                  >
-                                    Salvar
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => { setShowTemplateSaveInput(false); setNewTemplateName(''); }}
-                                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.7rem', cursor: 'pointer' }}
-                                  >
-                                    Cancelar
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Pílulas de modelos cadastrados */}
-                            <div className="custom-templates-scroll-row" style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
-                              {templates.map((tpl) => (
-                                <div
-                                  key={tpl.id}
-                                  onClick={() => handleApplyTemplate(tpl.content)}
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    background: 'rgba(255,255,255,0.04)',
-                                    border: '1px solid rgba(255,255,255,0.06)',
-                                    borderRadius: '16px',
-                                    padding: '4px 10px',
-                                    fontSize: '0.7rem',
-                                    color: 'var(--text-secondary)',
-                                    cursor: 'pointer',
-                                    whiteSpace: 'nowrap',
-                                    transition: 'all 0.2s ease'
-                                  }}
-                                  title="Clique para aplicar"
-                                  className="template-pill-item"
-                                >
-                                  <span>{tpl.name}</span>
-                                  <span
-                                    onClick={(e) => handleDeleteTemplate(tpl.id, e)}
-                                    style={{
-                                      color: 'var(--text-muted)',
-                                      fontSize: '0.85rem',
-                                      padding: '0 2px',
-                                      marginLeft: '4px',
-                                      borderRadius: '50%',
-                                      cursor: 'pointer',
-                                      display: 'inline-block',
-                                      width: '12px',
-                                      height: '12px',
-                                      lineHeight: '10px',
-                                      textAlign: 'center'
-                                    }}
-                                    title="Excluir modelo"
-                                  >
-                                    ×
-                                  </span>
-                                </div>
-                              ))}
-                              {templates.length === 0 && (
-                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Nenhum modelo salvo.</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
+                         {/* Área do Editor de Textos Reativo */}
+                         <div className="form-group" style={{ marginTop: '16px' }}>
+                           {(!selectedPlatforms.includes('tiktok') || !selectedPlatforms.includes('youtube')) ? (
+                             // Modo editor único (TikTok selecionado ou YouTube selecionado ou nada selecionado)
+                             selectedPlatforms.includes('youtube') ? (
+                               // Apenas YouTube selecionado
+                               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                 <div>
+                                   <label className="form-label" htmlFor="title-youtube" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                     <span>Título do YouTube</span>
+                                     <span style={{ fontSize: '0.7rem', color: youtubeTitle.length > 90 ? 'var(--error)' : 'var(--text-muted)' }}>
+                                       {youtubeTitle.length}/100
+                                     </span>
+                                   </label>
+                                   <input 
+                                     type="text"
+                                     id="title-youtube" 
+                                     className="form-input" 
+                                     maxLength={100}
+                                     placeholder="Digite o título do vídeo do YouTube..."
+                                     value={youtubeTitle} 
+                                     onChange={(e) => setYoutubeTitle(e.target.value)}
+                                     style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.88rem' }}
+                                   />
+                                 </div>
+                                 <div>
+                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                     <label className="form-label" htmlFor="desc-youtube" style={{ marginBottom: 0 }}>Descrição do YouTube</label>
+                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                       <button
+                                         type="button"
+                                         onClick={() => {
+                                           if (!youtubeDescription.trim()) { alert("Digite uma descrição antes de salvar."); return; }
+                                           const name = window.prompt("Nome do modelo de descrição:");
+                                           if (name && name.trim()) {
+                                             const newTpl = { id: 'tpl_' + Date.now(), name: name.trim(), content: youtubeDescription };
+                                             const updated = [...templates, newTpl];
+                                             setTemplates(updated);
+                                             localStorage.setItem('caption_templates', JSON.stringify(updated));
+                                             addNotification('success', 'Modelo Salvo', `Modelo "${name}" salvo!`);
+                                           }
+                                         }}
+                                         style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '3px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                       >
+                                         💾 Salvar Modelo
+                                       </button>
+                                       {templates.length > 0 && (
+                                         <select
+                                           onChange={(e) => {
+                                             if (e.target.value) setYoutubeDescription(e.target.value);
+                                             e.target.value = "";
+                                           }}
+                                           style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '2px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', maxWidth: '100px' }}
+                                         >
+                                           <option value="">📂 Carregar...</option>
+                                           {templates.map(t => (
+                                             <option key={t.id} value={t.content}>{t.name}</option>
+                                           ))}
+                                         </select>
+                                       )}
+                                     </div>
+                                   </div>
+                                   <textarea 
+                                     id="desc-youtube" className="form-textarea" 
+                                     placeholder="Escreva a descrição detalhada para o YouTube (redes, links, resumo)..."
+                                     rows={4} value={youtubeDescription} onChange={(e) => setYoutubeDescription(e.target.value)}
+                                   />
+                                 </div>
+                               </div>
+                             ) : selectedPlatforms.includes('tiktok') ? (
+                               // Apenas TikTok selecionado
+                               <>
+                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                   <label className="form-label" htmlFor="caption-tiktok" style={{ marginBottom: 0 }}>Legenda do TikTok</label>
+                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                     <button
+                                       type="button"
+                                       onClick={() => {
+                                         if (!tiktokCaption.trim()) { alert("Digite um texto antes de salvar."); return; }
+                                         const name = window.prompt("Nome do modelo de legenda:");
+                                         if (name && name.trim()) {
+                                           const newTpl = { id: 'tpl_' + Date.now(), name: name.trim(), content: tiktokCaption };
+                                           const updated = [...templates, newTpl];
+                                           setTemplates(updated);
+                                           localStorage.setItem('caption_templates', JSON.stringify(updated));
+                                           addNotification('success', 'Modelo Salvo', `Modelo "${name}" salvo!`);
+                                         }
+                                       }}
+                                       style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '3px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                     >
+                                       💾 Salvar Modelo
+                                     </button>
+                                     {templates.length > 0 && (
+                                       <select
+                                         onChange={(e) => {
+                                           if (e.target.value) setTiktokCaption(e.target.value);
+                                           e.target.value = "";
+                                         }}
+                                         style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '2px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', maxWidth: '100px' }}
+                                       >
+                                         <option value="">📂 Carregar...</option>
+                                         {templates.map(t => (
+                                           <option key={t.id} value={t.content}>{t.name}</option>
+                                         ))}
+                                       </select>
+                                     )}
+                                   </div>
+                                 </div>
+                                 <textarea 
+                                   id="caption-tiktok" className="form-textarea" 
+                                   placeholder="Escreva a legenda curta e tags virais específicas para o TikTok..."
+                                   rows={3} value={tiktokCaption} onChange={(e) => setTiktokCaption(e.target.value)}
+                                 />
+                               </>
+                             ) : (
+                               // Nenhuma rede ativa selecionada (Geral)
+                               <>
+                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                   <label className="form-label" htmlFor="caption" style={{ marginBottom: 0 }}>Legenda / Texto do Post</label>
+                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                     <button
+                                       type="button"
+                                       onClick={() => {
+                                         if (!caption.trim()) { alert("Digite um texto antes de salvar."); return; }
+                                         const name = window.prompt("Nome do modelo de legenda:");
+                                         if (name && name.trim()) {
+                                           const newTpl = { id: 'tpl_' + Date.now(), name: name.trim(), content: caption };
+                                           const updated = [...templates, newTpl];
+                                           setTemplates(updated);
+                                           localStorage.setItem('caption_templates', JSON.stringify(updated));
+                                           addNotification('success', 'Modelo Salvo', `Modelo "${name}" salvo!`);
+                                         }
+                                       }}
+                                       style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '3px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                     >
+                                       💾 Salvar Modelo
+                                     </button>
+                                     {templates.length > 0 && (
+                                       <select
+                                         onChange={(e) => {
+                                           if (e.target.value) setCaption(e.target.value);
+                                           e.target.value = "";
+                                         }}
+                                         style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '2px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', maxWidth: '100px' }}
+                                       >
+                                         <option value="">📂 Carregar...</option>
+                                         {templates.map(t => (
+                                           <option key={t.id} value={t.content}>{t.name}</option>
+                                         ))}
+                                       </select>
+                                     )}
+                                   </div>
+                                 </div>
+                                 <textarea 
+                                   id="caption" className="form-textarea" 
+                                   placeholder="Escreva a legenda comum e as tags para todas as redes..."
+                                   rows={3} value={caption} onChange={(e) => setCaption(e.target.value)}
+                                 />
+                               </>
+                             )
+                           ) : (
+                             // Modo múltiplas redes selecionadas (Abas do editor)
+                             activeEditorTab === 'tiktok' ? (
+                               <>
+                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                   <label className="form-label" htmlFor="caption-tiktok" style={{ marginBottom: 0 }}>Legenda do TikTok</label>
+                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                     <button
+                                       type="button"
+                                       onClick={() => {
+                                         if (!tiktokCaption.trim()) { alert("Digite um texto antes de salvar."); return; }
+                                         const name = window.prompt("Nome do modelo de legenda:");
+                                         if (name && name.trim()) {
+                                           const newTpl = { id: 'tpl_' + Date.now(), name: name.trim(), content: tiktokCaption };
+                                           const updated = [...templates, newTpl];
+                                           setTemplates(updated);
+                                           localStorage.setItem('caption_templates', JSON.stringify(updated));
+                                           addNotification('success', 'Modelo Salvo', `Modelo "${name}" salvo!`);
+                                         }
+                                       }}
+                                       style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '3px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                     >
+                                       💾 Salvar Modelo
+                                     </button>
+                                     {templates.length > 0 && (
+                                       <select
+                                         onChange={(e) => {
+                                           if (e.target.value) setTiktokCaption(e.target.value);
+                                           e.target.value = "";
+                                         }}
+                                         style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '2px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', maxWidth: '100px' }}
+                                       >
+                                         <option value="">📂 Carregar...</option>
+                                         {templates.map(t => (
+                                           <option key={t.id} value={t.content}>{t.name}</option>
+                                         ))}
+                                       </select>
+                                     )}
+                                   </div>
+                                 </div>
+                                 <textarea 
+                                   id="caption-tiktok" className="form-textarea" 
+                                   placeholder="Escreva a legenda curta e tags virais específicas para o TikTok..."
+                                   rows={3} value={tiktokCaption} onChange={(e) => setTiktokCaption(e.target.value)}
+                                 />
+                               </>
+                             ) : (
+                               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                 <div>
+                                   <label className="form-label" htmlFor="title-youtube" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                     <span>Título do YouTube</span>
+                                     <span style={{ fontSize: '0.7rem', color: youtubeTitle.length > 90 ? 'var(--error)' : 'var(--text-muted)' }}>
+                                       {youtubeTitle.length}/100
+                                     </span>
+                                   </label>
+                                   <input 
+                                     type="text"
+                                     id="title-youtube" 
+                                     className="form-input" 
+                                     maxLength={100}
+                                     placeholder="Digite o título do vídeo do YouTube..."
+                                     value={youtubeTitle} 
+                                     onChange={(e) => setYoutubeTitle(e.target.value)}
+                                     style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.88rem' }}
+                                   />
+                                 </div>
+                                 <div>
+                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                     <label className="form-label" htmlFor="desc-youtube" style={{ marginBottom: 0 }}>Descrição do YouTube</label>
+                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                       <button
+                                         type="button"
+                                         onClick={() => {
+                                           if (!youtubeDescription.trim()) { alert("Digite uma descrição antes de salvar."); return; }
+                                           const name = window.prompt("Nome do modelo de descrição:");
+                                           if (name && name.trim()) {
+                                             const newTpl = { id: 'tpl_' + Date.now(), name: name.trim(), content: youtubeDescription };
+                                             const updated = [...templates, newTpl];
+                                             setTemplates(updated);
+                                             localStorage.setItem('caption_templates', JSON.stringify(updated));
+                                             addNotification('success', 'Modelo Salvo', `Modelo "${name}" salvo!`);
+                                           }
+                                         }}
+                                         style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '3px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                       >
+                                         💾 Salvar Modelo
+                                       </button>
+                                       {templates.length > 0 && (
+                                         <select
+                                           onChange={(e) => {
+                                             if (e.target.value) setYoutubeDescription(e.target.value);
+                                             e.target.value = "";
+                                           }}
+                                           style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '2px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', maxWidth: '100px' }}
+                                         >
+                                           <option value="">📂 Carregar...</option>
+                                           {templates.map(t => (
+                                             <option key={t.id} value={t.content}>{t.name}</option>
+                                           ))}
+                                         </select>
+                                       )}
+                                     </div>
+                                   </div>
+                                   <textarea 
+                                     id="desc-youtube" className="form-textarea" 
+                                     placeholder="Escreva a descrição detalhada para o YouTube (redes, links, resumo)..."
+                                     rows={4} value={youtubeDescription} onChange={(e) => setYoutubeDescription(e.target.value)}
+                                   />
+                                 </div>
+                               </div>
+                             )
+                           )}
+                         </div>
 
                         {/* Hashtags IA */}
                         <div className="form-group">
@@ -2264,7 +2407,11 @@ export default function Dashboard() {
                     instagramUsername={instagramUsername}
                     youtubeChannelName={youtubeChannelName}
                     youtubeAvatar={youtubeAvatar}
+                    youtubeBanner={youtubeBanner}
                     youtubeFormat={youtubeFormat}
+                    youtubeTitle={youtubeTitle}
+                    youtubeDescription={youtubeDescription}
+                    tiktokCaption={tiktokCaption}
                   />
                 ) : (
                   <div className="mockup-placeholder glass-panel">
@@ -2573,110 +2720,32 @@ export default function Dashboard() {
 
                 <div className="connections-list" style={{ marginTop: 0 }}>
                   {/* Conector TikTok */}
-                  {/* Conector TikTok */}
-                  <div className={`conn-item ${tiktokConnected ? 'connected' : 'disconnected'}`} style={{ flexDirection: 'column', alignItems: 'stretch', gap: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                      <div className="conn-info">
-                        {tiktokConnected && tiktokAvatar ? (
-                          <img src={tiktokAvatar} alt="TikTok Avatar" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
-                        ) : (
-                          <div className="platform-icon tt-icon">
-                            <TikTokIcon size={20} />
-                          </div>
-                        )}
-                        <div>
-                          <div className="conn-name">TikTok Sandbox API</div>
-                          <div className="conn-status">
-                            {tiktokConnected && <span className="pulse-dot"></span>}
-                            {tiktokConnected ? `Conectado como @${tiktokUsername}` : 'Desconectado'}
-                          </div>
-                        </div>
-                      </div>
-                      {tiktokConnected ? (
-                        <button onClick={handleTiktokDisconnect} className="sec-btn disconnect-btn" style={{ padding: '8px 14px', fontSize: '0.8rem' }} type="button">
-                          Desconectar
-                        </button>
-                      ) : (
-                        <button onClick={handleTiktokConnect} style={{ padding: '8px 14px', fontSize: '0.8rem', backgroundColor: '#000', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', transition: 'background 0.2s' }} type="button" onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#111'} onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#000'}>
-                          <TikTokIcon size={14} /> Conectar com TikTok
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Controle de Simulação de Limite */}
-                    {tiktokConnected && (
-                      <div style={{ borderTop: '1px dashed rgba(255,255,255,0.06)', paddingTop: '10px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.75rem', color: '#ffc107', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          ⚠️ Simular Limite de Postagens Excedido
-                        </span>
-                        <label className="switch-toggle" style={{ transform: 'scale(0.75)' }}>
-                          <input
-                            type="checkbox"
-                            checked={simulatedLimitReached}
-                            onChange={(e) => setSimulatedLimitReached(e.target.checked)}
-                          />
-                          <span className="switch-slider"></span>
-                        </label>
-                      </div>
-                    )}
-                    
-                    {/* Painel de Diagnóstico do Perfil */}
-                    <div style={{ borderTop: '1px dashed rgba(255,255,255,0.06)', paddingTop: '10px', marginTop: '4px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Diagnóstico do Perfil TikTok</span>
-                        <button
-                          type="button"
-                          onClick={handleTiktokDebug}
-                          disabled={isDebugLoading}
-                          className="sec-btn"
-                          style={{ padding: '6px 10px', fontSize: '0.7rem', height: 'auto', background: 'rgba(138, 63, 252, 0.1)', borderColor: 'rgba(138, 63, 252, 0.2)', color: 'var(--primary)' }}
-                        >
-                          {isDebugLoading ? 'Testando...' : 'Testar API de Perfil'}
-                        </button>
-                      </div>
-                      
-                      {debugResponse && (
-                        <div style={{ 
-                          marginTop: '10px', 
-                          background: 'rgba(0,0,0,0.5)', 
-                          border: '1px solid rgba(255,255,255,0.08)', 
-                          borderRadius: '6px', 
-                          padding: '10px', 
-                          maxHeight: '180px', 
-                          overflowY: 'auto',
-                          fontSize: '0.72rem',
-                          fontFamily: 'monospace',
-                          whiteSpace: 'pre-wrap',
-                          color: '#a9b2c3',
-                          textAlign: 'left',
-                          lineHeight: '1.4'
-                        }}>
-                          <div style={{ fontWeight: 'bold', color: debugResponse.tiktok_api_response?.status_code === 200 ? 'var(--success)' : 'var(--error)', marginBottom: '5px' }}>
-                            HTTP Status: {debugResponse.tiktok_api_response?.status_code || 'Erro'}
-                          </div>
-                          {JSON.stringify(debugResponse, null, 2)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Conector Instagram */}
-                  <div className={`conn-item ${instagramConnected ? 'connected' : 'disconnected'}`}>
+                  <div className={`conn-item ${tiktokConnected ? 'connected' : 'disconnected'}`}>
                     <div className="conn-info">
-                      <div className="platform-icon ig-icon" style={{ background: 'rgba(214, 41, 118, 0.1)', color: '#d62976' }}>
-                        <InstagramIcon size={20} />
-                      </div>
+                      {tiktokConnected && tiktokAvatar ? (
+                        <img src={tiktokAvatar} alt="TikTok Avatar" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                      ) : (
+                        <div className="platform-icon tt-icon">
+                          <TikTokIcon size={20} />
+                        </div>
+                      )}
                       <div>
-                        <div className="conn-name">Instagram Business API</div>
+                        <div className="conn-name">TikTok Creator API</div>
                         <div className="conn-status">
-                          {instagramConnected && <span className="pulse-dot"></span>}
-                          {instagramConnected ? `Conectado como @${instagramUsername}` : 'Sandbox Meta (Simulado)'}
+                          {tiktokConnected && <span className="pulse-dot"></span>}
+                          {tiktokConnected ? `Conectado como @${tiktokUsername}` : 'Desconectado'}
                         </div>
                       </div>
                     </div>
-                    <button onClick={handleInstagramConnect} className={`sec-btn ${instagramConnected ? 'disconnect-btn' : ''}`} style={{ padding: '8px 14px', fontSize: '0.8rem' }}>
-                      {instagramConnected ? 'Desconectar' : 'Conectar'}
-                    </button>
+                    {tiktokConnected ? (
+                      <button onClick={handleTiktokDisconnect} className="sec-btn disconnect-btn" style={{ padding: '8px 14px', fontSize: '0.8rem' }} type="button">
+                        Desconectar
+                      </button>
+                    ) : (
+                      <button onClick={handleTiktokConnect} className="sec-btn connect-btn" style={{ padding: '8px 14px', fontSize: '0.8rem' }} type="button">
+                        Conectar
+                      </button>
+                    )}
                   </div>
 
                   {/* Conector YouTube */}
@@ -2690,15 +2759,39 @@ export default function Dashboard() {
                         </div>
                       )}
                       <div>
-                        <div className="conn-name">YouTube Shorts API</div>
+                        <div className="conn-name">YouTube Channel API</div>
                         <div className="conn-status">
                           {youtubeConnected && <span className="pulse-dot"></span>}
-                          {youtubeConnected ? `Vinculado a ${youtubeChannelName}` : 'Canal Studio (Simulado)'}
+                          {youtubeConnected ? `Vinculado a ${youtubeChannelName}` : 'Desconectado'}
                         </div>
                       </div>
                     </div>
-                    <button onClick={handleYoutubeConnect} className={`sec-btn ${youtubeConnected ? 'disconnect-btn' : ''}`} style={{ padding: '8px 14px', fontSize: '0.8rem' }}>
-                      {youtubeConnected ? 'Desconectar' : 'Conectar'}
+                    {youtubeConnected ? (
+                      <button onClick={handleYoutubeConnect} className="sec-btn disconnect-btn" style={{ padding: '8px 14px', fontSize: '0.8rem' }} type="button">
+                        Desconectar
+                      </button>
+                    ) : (
+                      <button onClick={handleYoutubeConnect} className="sec-btn connect-btn" style={{ padding: '8px 14px', fontSize: '0.8rem' }} type="button">
+                        Conectar
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Conector Instagram */}
+                  <div className={`conn-item disconnected`} style={{ opacity: 0.5 }}>
+                    <div className="conn-info">
+                      <div className="platform-icon ig-icon" style={{ background: 'rgba(214, 41, 118, 0.1)', color: '#d62976' }}>
+                        <InstagramIcon size={20} />
+                      </div>
+                      <div>
+                        <div className="conn-name">Instagram Business API</div>
+                        <div className="conn-status">
+                          Indisponível
+                        </div>
+                      </div>
+                    </div>
+                    <button className="sec-btn" style={{ padding: '8px 14px', fontSize: '0.8rem', cursor: 'not-allowed' }} disabled={true}>
+                      Indisponível
                     </button>
                   </div>
                 </div>
