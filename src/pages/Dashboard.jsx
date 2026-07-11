@@ -666,17 +666,33 @@ export default function Dashboard() {
     tempVideo.onloadedmetadata = () => {
       setVideoDuration(tempVideo.duration);
       console.log("Duração do vídeo detectada:", tempVideo.duration, "segundos");
+      if (tempVideo.duration > 180) {
+        setYoutubeFormat('video');
+      } else {
+        setYoutubeFormat('shorts');
+      }
     };
     tempVideo.src = url;
   };
 
   const handleNextStep = () => {
-    // Validação de duração máxima para o TikTok
-    if (selectedPlatforms.includes('tiktok') && creatorInfo && creatorInfo.max_video_post_duration_sec) {
-      if (videoDuration > creatorInfo.max_video_post_duration_sec) {
-        alert(`O vídeo selecionado tem ${Math.round(videoDuration)}s de duração, o que excede o limite máximo permitido de ${creatorInfo.max_video_post_duration_sec}s para esta conta do TikTok.`);
-        return;
+    // Se o vídeo excede o limite do TikTok (limite do perfil ou 600 segundos por padrão)
+    const tiktokLimit = (creatorInfo && creatorInfo.max_video_post_duration_sec) || 600;
+    
+    if (videoDuration > tiktokLimit) {
+      // Desmarca o TikTok se ele estiver selecionado nas plataformas
+      setSelectedPlatforms(prev => prev.filter(p => p !== 'tiktok'));
+      
+      // Garante que o YouTube está selecionado
+      if (!selectedPlatforms.includes('youtube')) {
+        setSelectedPlatforms(prev => [...prev.filter(p => p !== 'tiktok'), 'youtube']);
       }
+      
+      // Força o formato de vídeo clássico no YouTube
+      setYoutubeFormat('video');
+      
+      // Exibe notificação de aviso
+      alert(`Aviso: Este vídeo tem ${Math.round(videoDuration)} segundos. Como ele excede o limite máximo de ${tiktokLimit} segundos do TikTok, ele foi configurado automaticamente para publicação apenas no YouTube como Vídeo Clássico.`);
     }
     setCreationStep(2);
   };
@@ -761,6 +777,14 @@ export default function Dashboard() {
 
   // Alterna a seleção de redes sociais
   const togglePlatformSelection = (plat) => {
+    if (plat === 'tiktok') {
+      const tiktokLimit = (creatorInfo && creatorInfo.max_video_post_duration_sec) || 600;
+      if (videoFile && videoDuration > tiktokLimit) {
+        alert(`O TikTok não aceita vídeos com mais de ${tiktokLimit} segundos. Este vídeo tem ${Math.round(videoDuration)}s de duração.`);
+        return;
+      }
+    }
+    
     if (selectedPlatforms.includes(plat)) {
       if (selectedPlatforms.length === 1) return; // requer pelo menos uma
       setSelectedPlatforms(prev => prev.filter(p => p !== plat));
@@ -2155,20 +2179,44 @@ export default function Dashboard() {
                                  </span>
 
                                  {/* Visibilidade do YouTube */}
-                                 <div className="form-group">
-                                   <label className="form-label" htmlFor="youtube-privacy">Privacidade do Vídeo</label>
-                                   <select 
-                                     id="youtube-privacy" 
-                                     className="form-input"
-                                     value={youtubePrivacy} 
-                                     onChange={(e) => setYoutubePrivacy(e.target.value)}
-                                     style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}
-                                   >
-                                     <option value="public">Público (Imediato)</option>
-                                     <option value="unlisted">Não Listado</option>
-                                     <option value="private">Privado</option>
-                                   </select>
-                                 </div>
+                                  <div className="form-group">
+                                    <label className="form-label" htmlFor="youtube-privacy">Privacidade do Vídeo</label>
+                                    <select 
+                                      id="youtube-privacy" 
+                                      className="form-input"
+                                      value={youtubePrivacy} 
+                                      onChange={(e) => setYoutubePrivacy(e.target.value)}
+                                      style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}
+                                    >
+                                      <option value="public">Público (Imediato)</option>
+                                      <option value="unlisted">Não Listado</option>
+                                      <option value="private">Privado</option>
+                                    </select>
+                                  </div>
+
+                                  {/* Formato de Publicação do YouTube (Obrigatório / Condicional por tamanho) */}
+                                  <div className="form-group">
+                                    <label className="form-label" htmlFor="youtube-format">Formato de Publicação do YouTube</label>
+                                    {videoDuration <= 180 ? (
+                                      <select
+                                        id="youtube-format"
+                                        className="form-input"
+                                        value={youtubeFormat}
+                                        onChange={(e) => setYoutubeFormat(e.target.value)}
+                                        style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', fontWeight: 'bold' }}
+                                      >
+                                        <option value="shorts">YouTube Shorts (Vertical até 3 minutos)</option>
+                                        <option value="video">Vídeo Clássico do YouTube</option>
+                                      </select>
+                                    ) : (
+                                      <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                                        🎥 <strong>Vídeo Clássico do YouTube</strong>
+                                        <span style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                          Vídeos com mais de 3 minutos (${Math.round(videoDuration)}s) são configurados no formato Clássico.
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
 
                                  {/* Acordeão de Configurações Avançadas do YouTube */}
                                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px', marginTop: '12px' }}>
