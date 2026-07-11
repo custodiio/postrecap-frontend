@@ -136,14 +136,23 @@ export default function Dashboard() {
   const [showTiktokAdvanced, setShowTiktokAdvanced] = useState(false);
   const [showYoutubeAdvanced, setShowYoutubeAdvanced] = useState(false);
 
-  // Gerenciamento de Templates de Legenda/Descrição
-  const [templates, setTemplates] = useState(() => {
+  // Gerenciamento de Templates de Legenda/Descrição (Caixas Individuais)
+  const [captionTemplates, setCaptionTemplates] = useState(() => {
     const saved = localStorage.getItem('caption_templates');
     return saved ? JSON.parse(saved) : [
       { id: 't1', name: 'Recap Padrão 🍷', content: 'Mais um resumo incrível para vocês! Não se esqueçam de deixar o like e se inscrever no canal. 🍷\n\n#anime #recaps #resumo' },
       { id: 't2', name: 'Hashtags Virais 🚀', content: '#anime #animerecap #resumodeanimes #otaku #viral #shorts #recap' }
     ];
   });
+
+  // Padrões de Postagem Completos (Predefinições)
+  const [postTemplates, setPostTemplates] = useState(() => {
+    const saved = localStorage.getItem('post_templates');
+    return saved ? JSON.parse(saved) : [];
+  });
+  
+  const [suggestedHashtags, setSuggestedHashtags] = useState([]);
+  const [selectedPatternId, setSelectedPatternId] = useState('');
   const [showTemplateSaveInput, setShowTemplateSaveInput] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [activeEditorTab, setActiveEditorTab] = useState('tiktok'); // 'tiktok' ou 'youtube' no modo personalizado
@@ -587,8 +596,8 @@ export default function Dashboard() {
       content: textToSave
     };
     
-    const updated = [...templates, newTpl];
-    setTemplates(updated);
+    const updated = [...captionTemplates, newTpl];
+    setCaptionTemplates(updated);
     localStorage.setItem('caption_templates', JSON.stringify(updated));
     setNewTemplateName('');
     setShowTemplateSaveInput(false);
@@ -612,8 +621,8 @@ export default function Dashboard() {
   // Exclui um template salvo
   const handleDeleteTemplate = (id, e) => {
     e.stopPropagation(); // Evita aplicar o template ao clicar em excluir
-    const updated = templates.filter(t => t.id !== id);
-    setTemplates(updated);
+    const updated = captionTemplates.filter(t => t.id !== id);
+    setCaptionTemplates(updated);
     localStorage.setItem('caption_templates', JSON.stringify(updated));
   };
 
@@ -672,21 +681,38 @@ export default function Dashboard() {
   };
 
   const handleSuggestTags = async () => {
-    const textToAnalyze = useCustomPerPlatform 
-      ? (activeEditorTab === 'tiktok' ? tiktokCaption : youtubeDescription)
-      : caption;
+    // Analisar legenda do TikTok se TikTok estiver ativo; se não, usar descrição do YouTube
+    const textToAnalyze = selectedPlatforms.includes('tiktok') 
+      ? tiktokCaption 
+      : (youtubeDescription || youtubeTitle);
 
     if (!textToAnalyze || !textToAnalyze.trim()) { 
-      alert("Por favor, digite algum texto antes de sugerir hashtags."); 
+      alert("Por favor, digite algum texto antes de sugerir tags."); 
       return; 
     }
 
     setIsGeneratingTags(true);
 
-    // Cria uma Promise para garantir pelo menos 2 segundos de carregamento
+    // Cria uma Promise para garantir pelo menos 2 segundos de carregamento visual
     const delayPromise = new Promise(resolve => setTimeout(resolve, 2000));
 
+    let fetchedHashtags = [];
     let fetchedTags = [];
+    
+    const textLower = textToAnalyze.toLowerCase();
+
+    // Fallback inteligente enriquecido se a API não retornar nada
+    if (textLower.includes('anime') || textLower.includes('recap') || textLower.includes('otaku') || textLower.includes('mang') || textLower.includes('vira')) {
+      fetchedHashtags = ['#anime', '#animerecap', '#otaku', '#recap', '#geek', '#manga', '#viral', '#shorts', '#foryou', '#animes', '#nerd', '#dbz', '#onepiece', '#naruto', '#resumoanime', '#otakubrasil', '#geekbrasil', '#recapitulação', '#fyp', '#viralshorts', '#trending'];
+      fetchedTags = ['anime', 'anime recap', 'otaku', 'recap', 'geek', 'manga', 'viral', 'shorts', 'foryou', 'animes', 'nerd', 'dbz', 'one piece', 'naruto', 'resumo anime', 'otaku brasil', 'geek brasil', 'recapitulação', 'fyp', 'viral shorts', 'trending'];
+    } else if (textLower.includes('game') || textLower.includes('play') || textLower.includes('jogo') || textLower.includes('xbox') || textLower.includes('ps5')) {
+      fetchedHashtags = ['#gaming', '#games', '#gameplay', '#gamer', '#viral', '#shorts', '#foryou', '#videogames', '#pcgaming', '#ps5', '#xbox', '#streamer', '#twitch', '#youtube', '#trends', '#highlights', '#jogos', '#gameplaybr', '#geek', '#nerd', '#multiplayer', '#rpg'];
+      fetchedTags = ['gaming', 'games', 'gameplay', 'gamer', 'viral', 'shorts', 'foryou', 'videogames', 'pc gaming', 'ps5', 'xbox', 'streamer', 'twitch', 'youtube', 'trends', 'highlights', 'jogos', 'gameplay br', 'geek', 'nerd', 'multiplayer', 'rpg'];
+    } else {
+      fetchedHashtags = ['#recap', '#viral', '#shorts', '#foryou', '#trending', '#video', '#fyp', '#conteudo', '#post', '#recapitulação', '#resumo', '#cortes', '#canal', '#novidade', '#top10', '#melhoresmomentos', '#ia', '#edição', '#produção', '#sucesso', '#engajamento', '#views', '#creator', '#creatorstudio'];
+      fetchedTags = ['recap', 'viral', 'shorts', 'foryou', 'trending', 'video', 'fyp', 'conteudo', 'post', 'recapitulação', 'resumo', 'cortes', 'canal', 'novidade', 'top 10', 'melhores momentos', 'ia', 'edição', 'produção', 'sucesso', 'engajamento', 'views', 'creator', 'creator studio'];
+    }
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/tiktok/suggest-tags`, {
         method: 'POST',
@@ -695,38 +721,40 @@ export default function Dashboard() {
       });
       if (res.ok) { 
         const data = await res.json(); 
-        fetchedTags = data.hashtags || [];
+        if (data.hashtags && data.hashtags.length > 0) {
+          fetchedHashtags = data.hashtags;
+          fetchedTags = data.hashtags.map(t => t.replace('#', ''));
+        }
       }
     } catch (err) { 
       console.error("Erro ao buscar hashtags via API, usando fallback local:", err); 
     }
 
-    // Fallback inteligente se a API não retornar nada
-    if (fetchedTags.length === 0) {
-      const textLower = textToAnalyze.toLowerCase();
-      if (textLower.includes('anime') || textLower.includes('recap') || textLower.includes('otaku') || textLower.includes('mang') || textLower.includes('vira')) {
-        fetchedTags = ['#anime', '#animerecap', '#otaku', '#recap', '#geek', '#manga', '#viral', '#shorts', '#foryou'];
-      } else {
-        fetchedTags = ['#recap', '#viral', '#shorts', '#foryou', '#trending', '#video', '#fyp', '#conteudo', '#post'];
-      }
-    }
-
     // Espera os 2 segundos completarem antes de entregar o resultado
     await delayPromise;
 
+    setSuggestedHashtags(fetchedHashtags);
     setSuggestedTags(fetchedTags);
     setIsGeneratingTags(false);
   };
 
-  const addTagToCaption = (tag) => {
-    if (!useCustomPerPlatform) {
-      if (!caption.includes(tag)) { setCaption(prev => prev.trim() + " " + tag); }
-    } else {
-      if (activeEditorTab === 'tiktok') {
-        if (!tiktokCaption.includes(tag)) { setTiktokCaption(prev => prev.trim() + " " + tag); }
-      } else {
-        if (!youtubeDescription.includes(tag)) { setYoutubeDescription(prev => prev.trim() + " " + tag); }
+  const addHashtagToField = (hashtag) => {
+    if (selectedPlatforms.includes('tiktok') && (!selectedPlatforms.includes('youtube') || currentSubStep === 'tiktok')) {
+      if (!tiktokCaption.includes(hashtag)) {
+        setTiktokCaption(prev => prev.trim() + " " + hashtag);
       }
+    } else if (selectedPlatforms.includes('youtube')) {
+      if (!youtubeDescription.includes(hashtag)) {
+        setYoutubeDescription(prev => prev.trim() + " " + hashtag);
+      }
+    }
+  };
+
+  const addTagToYoutube = (tag) => {
+    const currentTags = youtubeTags.split(',').map(t => t.trim()).filter(Boolean);
+    if (!currentTags.includes(tag)) {
+      currentTags.push(tag);
+      setYoutubeTags(currentTags.join(', '));
     }
   };
 
@@ -1112,7 +1140,9 @@ export default function Dashboard() {
   };
 
   const isPublishDisabled = selectedPlatforms.length === 0 || 
-    (selectedPlatforms.includes('tiktok') && commercialDisclosure && !promoteYourBrand && !promoteBrandedContent);
+    (selectedPlatforms.includes('tiktok') && commercialDisclosure && !promoteYourBrand && !promoteBrandedContent) ||
+    (selectedPlatforms.includes('youtube') && !youtubeTitle.trim()) ||
+    (selectedPlatforms.includes('tiktok') && !tiktokCaption.trim());
 
   return (
     <div className="dashboard-layout">
@@ -1553,63 +1583,228 @@ export default function Dashboard() {
                            </div>
                          </div>
 
-                         {/* Abas horizontais automáticas de legendas por rede */}
-                         {selectedPlatforms.includes('tiktok') && selectedPlatforms.includes('youtube') && (
-                           <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', marginTop: '16px' }}>
-                             <button
-                               type="button"
-                               onClick={() => setActiveEditorTab('tiktok')}
-                               style={{
-                                 flex: 1,
-                                 background: activeEditorTab === 'tiktok' ? 'rgba(255, 0, 80, 0.12)' : 'rgba(255,255,255,0.03)',
-                                 border: activeEditorTab === 'tiktok' ? '1px solid var(--tiktok-magenta)' : '1px solid rgba(255,255,255,0.06)',
-                                 color: activeEditorTab === 'tiktok' ? '#fff' : 'var(--text-secondary)',
-                                 padding: '8px 12px',
-                                 borderRadius: '8px',
-                                 fontSize: '0.8rem',
-                                 fontWeight: 'bold',
-                                 cursor: 'pointer',
-                                 display: 'flex',
-                                 alignItems: 'center',
-                                 justifyContent: 'center',
-                                 gap: '6px',
-                                 transition: 'all 0.2s'
-                               }}
-                             >
-                               <span style={{ color: 'var(--tiktok-magenta)' }}>TikTok</span> Legenda
-                             </button>
-                             <button
-                               type="button"
-                               onClick={() => setActiveEditorTab('youtube')}
-                               style={{
-                                 flex: 1,
-                                 background: activeEditorTab === 'youtube' ? 'rgba(255, 0, 0, 0.12)' : 'rgba(255,255,255,0.03)',
-                                 border: activeEditorTab === 'youtube' ? '1px solid #ff0000' : '1px solid rgba(255,255,255,0.06)',
-                                 color: activeEditorTab === 'youtube' ? '#fff' : 'var(--text-secondary)',
-                                 padding: '8px 12px',
-                                 borderRadius: '8px',
-                                 fontSize: '0.8rem',
-                                 fontWeight: 'bold',
-                                 cursor: 'pointer',
-                                 display: 'flex',
-                                 alignItems: 'center',
-                                 justifyContent: 'center',
-                                 gap: '6px',
-                                 transition: 'all 0.2s'
-                               }}
-                             >
-                               <span style={{ color: '#ff0000' }}>YouTube</span> Título & Descrição
-                             </button>
+                         {/* RENDERIZAÇÃO CONDICIONAL BASEADA NAS PLATAFORMAS SELECIONADAS */}
+                         {selectedPlatforms.length === 0 ? (
+                           <div style={{ textAlign: 'center', padding: '40px 20px', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px', marginTop: '20px' }}>
+                             <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '14px' }}>📡</span>
+                             <h4 style={{ color: '#fff', fontSize: '1rem', fontWeight: 'bold', margin: '0 0 8px 0' }}>Nenhum Canal Selecionado</h4>
+                             <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0, lineHeight: '1.5' }}>
+                               Selecione o TikTok ou o YouTube na seção de <strong>Canais de Distribuição</strong> acima para preencher as informações de postagem.
+                             </p>
                            </div>
-                         )}
+                         ) : (
+                           <>
+                             {/* PAINEL DE PREDEFINIÇÕES DE POSTAGEM COMPLETAS */}
+                             <div className="form-group" style={{ 
+                               background: 'linear-gradient(135deg, rgba(138, 63, 252, 0.15) 0%, rgba(138, 63, 252, 0.04) 100%)', 
+                               border: '2px solid rgba(138, 63, 252, 0.65)', 
+                               borderRadius: '12px', 
+                               padding: '18px', 
+                               marginBottom: '20px', 
+                               marginTop: '10px',
+                               boxShadow: '0 0 20px rgba(138, 63, 252, 0.25)'
+                             }}>
+                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                                 <div style={{ flex: '1', minWidth: '220px' }}>
+                                   <span style={{ fontSize: '0.9rem', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                     ⚡ Predefinições de Postagem Completas (Salvar Tudo)
+                                   </span>
+                                   <p style={{ margin: '4px 0 0 0', fontSize: '0.74rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                                     Carrega ou salva todas as configurações (títulos, descrições, tags e privacidade de todas as redes) instantaneamente.
+                                   </p>
+                                 </div>
+                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                   <button
+                                     type="button"
+                                     onClick={() => {
+                                       const name = window.prompt("Digite o nome para esta predefinição completa de postagem:");
+                                       if (name && name.trim()) {
+                                         const newPattern = {
+                                           id: 'pattern_' + Date.now(),
+                                           name: name.trim(),
+                                           tiktokCaption,
+                                           youtubeTitle,
+                                           youtubeDescription,
+                                           tiktokPrivacy,
+                                           tiktokComment,
+                                           tiktokDuet,
+                                           tiktokStitch,
+                                           youtubePrivacy,
+                                           youtubeFormat,
+                                           youtubeTags,
+                                           youtubeCategory,
+                                           youtubeMadeForKids
+                                         };
+                                         const updated = [...postTemplates, newPattern];
+                                         setPostTemplates(updated);
+                                         localStorage.setItem('post_templates', JSON.stringify(updated));
+                                         setSelectedPatternId(newPattern.id);
+                                         addNotification('success', 'Predefinição Salva', `Predefinição "${name}" salva com sucesso!`);
+                                       }
+                                     }}
+                                     className="sec-btn"
+                                     style={{ padding: '8px 14px', fontSize: '0.76rem', background: 'rgba(138, 63, 252, 0.25)', borderColor: 'rgba(138, 63, 252, 0.6)', color: '#fff', fontWeight: 'bold' }}
+                                   >
+                                     💾 Salvar Predefinição
+                                   </button>
+                                   {postTemplates.length > 0 && (
+                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                       <select
+                                         value={selectedPatternId}
+                                         onChange={(e) => {
+                                           const val = e.target.value;
+                                           setSelectedPatternId(val);
+                                           if (val) {
+                                             const t = postTemplates.find(item => item.id === val);
+                                             if (t) {
+                                               if (t.tiktokCaption !== undefined) setTiktokCaption(t.tiktokCaption);
+                                               if (t.youtubeTitle !== undefined) setYoutubeTitle(t.youtubeTitle);
+                                               if (t.youtubeDescription !== undefined) setYoutubeDescription(t.youtubeDescription);
+                                               if (t.tiktokPrivacy !== undefined) setTiktokPrivacy(t.tiktokPrivacy);
+                                               if (t.tiktokComment !== undefined) setTiktokComment(t.tiktokComment);
+                                               if (t.tiktokDuet !== undefined) setTiktokDuet(t.tiktokDuet);
+                                               if (t.tiktokStitch !== undefined) setTiktokStitch(t.tiktokStitch);
+                                               if (t.youtubePrivacy !== undefined) setYoutubePrivacy(t.youtubePrivacy);
+                                               if (t.youtubeFormat !== undefined) setYoutubeFormat(t.youtubeFormat);
+                                               if (t.youtubeTags !== undefined) setYoutubeTags(t.youtubeTags);
+                                               if (t.youtubeCategory !== undefined) setYoutubeCategory(t.youtubeCategory);
+                                               if (t.youtubeMadeForKids !== undefined) setYoutubeMadeForKids(t.youtubeMadeForKids);
+                                               addNotification('success', 'Predefinição Aplicada', `Predefinição "${t.name}" aplicada!`);
+                                             }
+                                           }
+                                         }}
+                                         style={{ background: '#1e1b4b', border: '2px solid rgba(138, 63, 252, 0.75)', borderRadius: '8px', padding: '8px 14px', fontSize: '0.8rem', color: '#fff', fontWeight: 'bold', cursor: 'pointer', outline: 'none', boxShadow: '0 0 12px rgba(138, 63, 252, 0.3)' }}
+                                       >
+                                         <option value="" style={{ background: '#0f0f0f', color: '#fff' }}>📂 Predefinições Salvas...</option>
+                                         {postTemplates.map(t => (
+                                           <option key={t.id} value={t.id} style={{ background: '#0f0f0f', color: '#fff' }}>{t.name}</option>
+                                         ))}
+                                       </select>
+                                       {selectedPatternId && (
+                                         <button
+                                           type="button"
+                                           onClick={() => {
+                                             if (window.confirm("Deseja realmente excluir esta predefinição?")) {
+                                               const updated = postTemplates.filter(item => item.id !== selectedPatternId);
+                                               setPostTemplates(updated);
+                                               localStorage.setItem('post_templates', JSON.stringify(updated));
+                                               setSelectedPatternId('');
+                                               addNotification('info', 'Predefinição Excluída', 'A predefinição foi removida.');
+                                             }
+                                           }}
+                                           style={{ background: 'rgba(255, 0, 0, 0.15)', border: '1px solid rgba(255, 0, 0, 0.3)', borderRadius: '8px', padding: '8px 10px', color: '#ff4d4d', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                           title="Excluir predefinição selecionada"
+                                         >
+                                           🗑️
+                                         </button>
+                                       )}
+                                     </div>
+                                   )}
+                                 </div>
+                               </div>
+                             </div>
 
-                         {/* Área do Editor de Textos Reativo */}
-                         <div className="form-group" style={{ marginTop: '16px' }}>
-                           {(!selectedPlatforms.includes('tiktok') || !selectedPlatforms.includes('youtube')) ? (
-                             // Modo editor único (TikTok selecionado ou YouTube selecionado ou nada selecionado)
-                             selectedPlatforms.includes('youtube') ? (
-                               // Apenas YouTube selecionado
-                               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                             {/* Sub-steps indicators if both platforms are selected */}
+                             {selectedPlatforms.includes('tiktok') && selectedPlatforms.includes('youtube') && (
+                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '20px 0', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, opacity: currentSubStep === 'tiktok' ? 1 : 0.4, transition: 'all 0.3s' }}>
+                                   <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'var(--tiktok-magenta)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 'bold', color: '#fff' }}>1</div>
+                                   <span style={{ fontSize: '0.78rem', fontWeight: 'bold', color: '#fff' }}>Configurações TikTok</span>
+                                 </div>
+                                 <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>➔</div>
+                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, opacity: currentSubStep === 'youtube' ? 1 : 0.4, transition: 'all 0.3s' }}>
+                                   <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#ff0000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 'bold', color: '#fff' }}>2</div>
+                                   <span style={{ fontSize: '0.78rem', fontWeight: 'bold', color: '#fff' }}>Configurações YouTube</span>
+                                 </div>
+                               </div>
+                             )}
+
+                             {/* BLOCO DE EDITOR TIKTOK */}
+                             {selectedPlatforms.includes('tiktok') && (!selectedPlatforms.includes('youtube') || currentSubStep === 'tiktok') && (
+                               <div className="form-group" style={{ marginTop: '16px' }}>
+                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                   <label className="form-label" htmlFor="caption-tiktok" style={{ marginBottom: 0 }}>Legenda do TikTok</label>
+                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                     <button
+                                       type="button"
+                                       onClick={() => {
+                                         if (!tiktokCaption.trim()) { alert("Digite um texto antes de salvar."); return; }
+                                         const name = window.prompt("Nome do modelo de legenda:");
+                                         if (name && name.trim()) {
+                                           const newTpl = { id: 'tpl_' + Date.now(), name: name.trim(), content: tiktokCaption };
+                                           const updated = [...captionTemplates, newTpl];
+                                           setCaptionTemplates(updated);
+                                           localStorage.setItem('caption_templates', JSON.stringify(updated));
+                                           addNotification('success', 'Modelo Salvo', `Modelo "${name}" salvo!`);
+                                         }
+                                       }}
+                                       style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '3px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                     >
+                                       💾 Salvar Modelo
+                                     </button>
+                                     {captionTemplates.length > 0 && (
+                                       <select
+                                         onChange={(e) => {
+                                           const selectedId = e.target.value;
+                                           if (selectedId) {
+                                             const t = captionTemplates.find(item => item.id === selectedId);
+                                             if (t && t.content) setTiktokCaption(t.content);
+                                           }
+                                           e.target.value = "";
+                                         }}
+                                         style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '2px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', maxWidth: '100px' }}
+                                       >
+                                         <option value="">📂 Carregar...</option>
+                                         {captionTemplates.map(t => (
+                                           <option key={t.id} value={t.id}>{t.name}</option>
+                                         ))}
+                                       </select>
+                                     )}
+                                   </div>
+                                 </div>
+                                 <textarea 
+                                   id="caption-tiktok" className="form-textarea" 
+                                   placeholder="Escreva a legenda curta e tags virais específicas para o TikTok..."
+                                   rows={3} 
+                                   value={tiktokCaption} 
+                                   onChange={(e) => {
+                                     const val = e.target.value;
+                                     setTiktokCaption(val);
+                                     setYoutubeDescription(prev => (prev === tiktokCaption || !prev) ? val : prev);
+                                   }}
+                                 />
+
+                                 {/* Recomendador de Hashtags IA para TikTok */}
+                                 <div className="form-group" style={{ marginTop: '14px', marginBottom: '0px' }}>
+                                   <div className="hashtag-generator-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                     <span className="form-label" style={{ marginBottom: 0, fontSize: '0.78rem' }}>Hashtags IA para TikTok (Max 5 recomendadas)</span>
+                                     <button
+                                       type="button"
+                                       onClick={handleSuggestTags}
+                                       className="sec-btn ai-tag-btn"
+                                       disabled={isGeneratingTags || !tiktokCaption.trim()}
+                                       style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem' }}
+                                     >
+                                       <Sparkles size={13} className={isGeneratingTags ? 'spin-animation' : ''} />
+                                       {isGeneratingTags ? 'Analisando...' : 'Sugerir Hashtags'}
+                                     </button>
+                                   </div>
+                                   {suggestedHashtags.length > 0 && (
+                                     <div className="suggested-tags-list" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
+                                       {suggestedHashtags.slice(0, 8).map((tag, idx) => (
+                                         <button key={idx} type="button" className="tag-pill" onClick={() => addHashtagToField(tag)}>
+                                           + {tag}
+                                         </button>
+                                       ))}
+                                     </div>
+                                   )}
+                                 </div>
+                               </div>
+                             )}
+
+                             {/* BLOCO DE EDITOR YOUTUBE */}
+                             {selectedPlatforms.includes('youtube') && (!selectedPlatforms.includes('tiktok') || currentSubStep === 'youtube') && (
+                               <div className="form-group" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                  <div>
                                    <label className="form-label" htmlFor="title-youtube" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                      <span>Título do YouTube</span>
@@ -1628,6 +1823,7 @@ export default function Dashboard() {
                                      style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.88rem' }}
                                    />
                                  </div>
+
                                  <div>
                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                                      <label className="form-label" htmlFor="desc-youtube" style={{ marginBottom: 0 }}>Descrição do YouTube</label>
@@ -1639,8 +1835,8 @@ export default function Dashboard() {
                                            const name = window.prompt("Nome do modelo de descrição:");
                                            if (name && name.trim()) {
                                              const newTpl = { id: 'tpl_' + Date.now(), name: name.trim(), content: youtubeDescription };
-                                             const updated = [...templates, newTpl];
-                                             setTemplates(updated);
+                                             const updated = [...captionTemplates, newTpl];
+                                             setCaptionTemplates(updated);
                                              localStorage.setItem('caption_templates', JSON.stringify(updated));
                                              addNotification('success', 'Modelo Salvo', `Modelo "${name}" salvo!`);
                                            }
@@ -1649,17 +1845,21 @@ export default function Dashboard() {
                                        >
                                          💾 Salvar Modelo
                                        </button>
-                                       {templates.length > 0 && (
+                                       {captionTemplates.length > 0 && (
                                          <select
                                            onChange={(e) => {
-                                             if (e.target.value) setYoutubeDescription(e.target.value);
+                                             const selectedId = e.target.value;
+                                             if (selectedId) {
+                                               const t = captionTemplates.find(item => item.id === selectedId);
+                                               if (t && t.content) setYoutubeDescription(t.content);
+                                             }
                                              e.target.value = "";
                                            }}
                                            style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '2px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', maxWidth: '100px' }}
                                          >
                                            <option value="">📂 Carregar...</option>
-                                           {templates.map(t => (
-                                             <option key={t.id} value={t.content}>{t.name}</option>
+                                           {captionTemplates.map(t => (
+                                             <option key={t.id} value={t.id}>{t.name}</option>
                                            ))}
                                          </select>
                                        )}
@@ -1668,720 +1868,505 @@ export default function Dashboard() {
                                    <textarea 
                                      id="desc-youtube" className="form-textarea" 
                                      placeholder="Escreva a descrição detalhada para o YouTube (redes, links, resumo)..."
-                                     rows={4} value={youtubeDescription} onChange={(e) => setYoutubeDescription(e.target.value)}
+                                     rows={4} 
+                                     value={youtubeDescription} 
+                                     onChange={(e) => setYoutubeDescription(e.target.value)}
                                    />
                                  </div>
+
+                                 {/* GERADOR DE METADADOS IA PARA YOUTUBE (HASHTAGS + TAGS DO VÍDEO) */}
+                                 <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)', marginTop: '8px' }}>
+                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                     <span style={{ fontSize: '0.82rem', fontWeight: 'bold', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                       🔮 Sugestões IA de SEO para YouTube
+                                     </span>
+                                     <button
+                                       type="button"
+                                       onClick={handleSuggestTags}
+                                       className="sec-btn ai-tag-btn"
+                                       disabled={isGeneratingTags || !youtubeDescription.trim()}
+                                       style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                                     >
+                                       <Sparkles size={12} className={isGeneratingTags ? 'spin-animation' : ''} />
+                                       {isGeneratingTags ? 'Gerando...' : 'Sugerir Tags & Hashtags'}
+                                     </button>
+                                   </div>
+
+                                   {/* Seção 1: Hashtags para Descrição */}
+                                   <div style={{ marginBottom: '14px' }}>
+                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                       <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>#️⃣ Hashtags IA (Inserir na Descrição)</span>
+                                       {suggestedHashtags.length > 0 && (
+                                         <button
+                                           type="button"
+                                           onClick={() => {
+                                             const listStr = "\n\n" + suggestedHashtags.slice(0, 25).join(' ');
+                                             setYoutubeDescription(prev => prev.trim() + listStr);
+                                             addNotification('success', 'Hashtags Adicionadas', '25 hashtags recomendadas inseridas no final da descrição.');
+                                           }}
+                                           style={{ background: 'rgba(138, 63, 252, 0.15)', border: '1px solid rgba(138, 63, 252, 0.3)', borderRadius: '6px', padding: '3px 8px', fontSize: '0.68rem', color: '#a78bfa', cursor: 'pointer' }}
+                                         >
+                                           📝 Inserir Todas (25)
+                                         </button>
+                                       )}
+                                     </div>
+                                     {suggestedHashtags.length > 0 ? (
+                                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                         {suggestedHashtags.slice(0, 15).map((tag, idx) => (
+                                           <button key={idx} type="button" className="tag-pill" onClick={() => addHashtagToField(tag)}>
+                                             + {tag}
+                                           </button>
+                                         ))}
+                                       </div>
+                                     ) : (
+                                       <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Digite a descrição e clique em "Sugerir Tags & Hashtags".</span>
+                                     )}
+                                   </div>
+
+                                   {/* Seção 2: Tags / Palavras-chave separadas por vírgula */}
+                                   <div>
+                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                       <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>🏷️ Tags IA (Palavras-chave do Vídeo)</span>
+                                       {suggestedTags.length > 0 && (
+                                         <button
+                                           type="button"
+                                           onClick={() => {
+                                             const tagsStr = suggestedTags.slice(0, 20).join(', ');
+                                             setYoutubeTags(tagsStr);
+                                             addNotification('success', 'Tags Preenchidas', 'Tags recomendadas preenchidas no campo de Tags.');
+                                           }}
+                                           style={{ background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '6px', padding: '3px 8px', fontSize: '0.68rem', color: '#34d399', cursor: 'pointer' }}
+                                         >
+                                           ⚡ Preencher Caixa de Tags
+                                         </button>
+                                       )}
+                                     </div>
+                                     {suggestedTags.length > 0 ? (
+                                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                         {suggestedTags.slice(0, 15).map((tag, idx) => (
+                                           <button key={idx} type="button" className="tag-pill" style={{ borderColor: 'rgba(16, 185, 129, 0.3)', color: '#34d399' }} onClick={() => addTagToYoutube(tag)}>
+                                             + {tag}
+                                           </button>
+                                         ))}
+                                       </div>
+                                     ) : (
+                                       <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>As sugestões aparecerão aqui para otimizar suas tags do YouTube.</span>
+                                     )}
+                                   </div>
+                                 </div>
                                </div>
-                             ) : selectedPlatforms.includes('tiktok') ? (
-                               // Apenas TikTok selecionado
-                               <>
-                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                                   <label className="form-label" htmlFor="caption-tiktok" style={{ marginBottom: 0 }}>Legenda do TikTok</label>
-                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                     <button
-                                       type="button"
-                                       onClick={() => {
-                                         if (!tiktokCaption.trim()) { alert("Digite um texto antes de salvar."); return; }
-                                         const name = window.prompt("Nome do modelo de legenda:");
-                                         if (name && name.trim()) {
-                                           const newTpl = { id: 'tpl_' + Date.now(), name: name.trim(), content: tiktokCaption };
-                                           const updated = [...templates, newTpl];
-                                           setTemplates(updated);
-                                           localStorage.setItem('caption_templates', JSON.stringify(updated));
-                                           addNotification('success', 'Modelo Salvo', `Modelo "${name}" salvo!`);
-                                         }
-                                       }}
-                                       style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '3px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                     >
-                                       💾 Salvar Modelo
-                                     </button>
-                                     {templates.length > 0 && (
-                                       <select
-                                         onChange={(e) => {
-                                           if (e.target.value) setTiktokCaption(e.target.value);
-                                           e.target.value = "";
-                                         }}
-                                         style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '2px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', maxWidth: '100px' }}
-                                       >
-                                         <option value="">📂 Carregar...</option>
-                                         {templates.map(t => (
-                                           <option key={t.id} value={t.content}>{t.name}</option>
-                                         ))}
-                                       </select>
-                                     )}
-                                   </div>
-                                 </div>
-                                 <textarea 
-                                   id="caption-tiktok" className="form-textarea" 
-                                   placeholder="Escreva a legenda curta e tags virais específicas para o TikTok..."
-                                   rows={3} value={tiktokCaption} onChange={(e) => setTiktokCaption(e.target.value)}
-                                 />
-                               </>
-                             ) : (
-                               // Nenhuma rede ativa selecionada (Geral)
-                               <>
-                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                                   <label className="form-label" htmlFor="caption" style={{ marginBottom: 0 }}>Legenda / Texto do Post</label>
-                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                     <button
-                                       type="button"
-                                       onClick={() => {
-                                         if (!caption.trim()) { alert("Digite um texto antes de salvar."); return; }
-                                         const name = window.prompt("Nome do modelo de legenda:");
-                                         if (name && name.trim()) {
-                                           const newTpl = { id: 'tpl_' + Date.now(), name: name.trim(), content: caption };
-                                           const updated = [...templates, newTpl];
-                                           setTemplates(updated);
-                                           localStorage.setItem('caption_templates', JSON.stringify(updated));
-                                           addNotification('success', 'Modelo Salvo', `Modelo "${name}" salvo!`);
-                                         }
-                                       }}
-                                       style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '3px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                     >
-                                       💾 Salvar Modelo
-                                     </button>
-                                     {templates.length > 0 && (
-                                       <select
-                                         onChange={(e) => {
-                                           if (e.target.value) setCaption(e.target.value);
-                                           e.target.value = "";
-                                         }}
-                                         style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '2px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', maxWidth: '100px' }}
-                                       >
-                                         <option value="">📂 Carregar...</option>
-                                         {templates.map(t => (
-                                           <option key={t.id} value={t.content}>{t.name}</option>
-                                         ))}
-                                       </select>
-                                     )}
-                                   </div>
-                                 </div>
+                             )}
+
+                             {/* BLOCO GERAL (NENHUMA PREMIUM SELECIONADA) */}
+                             {!selectedPlatforms.includes('tiktok') && !selectedPlatforms.includes('youtube') && (
+                               <div className="form-group" style={{ marginTop: '16px' }}>
+                                 <label className="form-label" htmlFor="caption">Legenda Geral</label>
                                  <textarea 
                                    id="caption" className="form-textarea" 
-                                   placeholder="Escreva a legenda comum e as tags para todas as redes..."
+                                   placeholder="Escreva uma legenda geral para todas as redes..."
                                    rows={3} value={caption} onChange={(e) => setCaption(e.target.value)}
                                  />
-                               </>
-                             )
-                           ) : (
-                             // Modo múltiplas redes selecionadas (Abas do editor)
-                             activeEditorTab === 'tiktok' ? (
-                               <>
-                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                                   <label className="form-label" htmlFor="caption-tiktok" style={{ marginBottom: 0 }}>Legenda do TikTok</label>
-                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                     <button
-                                       type="button"
-                                       onClick={() => {
-                                         if (!tiktokCaption.trim()) { alert("Digite um texto antes de salvar."); return; }
-                                         const name = window.prompt("Nome do modelo de legenda:");
-                                         if (name && name.trim()) {
-                                           const newTpl = { id: 'tpl_' + Date.now(), name: name.trim(), content: tiktokCaption };
-                                           const updated = [...templates, newTpl];
-                                           setTemplates(updated);
-                                           localStorage.setItem('caption_templates', JSON.stringify(updated));
-                                           addNotification('success', 'Modelo Salvo', `Modelo "${name}" salvo!`);
-                                         }
-                                       }}
-                                       style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '3px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                     >
-                                       💾 Salvar Modelo
-                                     </button>
-                                     {templates.length > 0 && (
-                                       <select
-                                         onChange={(e) => {
-                                           if (e.target.value) setTiktokCaption(e.target.value);
-                                           e.target.value = "";
-                                         }}
-                                         style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '2px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', maxWidth: '100px' }}
-                                       >
-                                         <option value="">📂 Carregar...</option>
-                                         {templates.map(t => (
-                                           <option key={t.id} value={t.content}>{t.name}</option>
-                                         ))}
-                                       </select>
-                                     )}
-                                   </div>
-                                 </div>
-                                 <textarea 
-                                   id="caption-tiktok" className="form-textarea" 
-                                   placeholder="Escreva a legenda curta e tags virais específicas para o TikTok..."
-                                   rows={3} value={tiktokCaption} onChange={(e) => setTiktokCaption(e.target.value)}
-                                 />
-                               </>
-                             ) : (
-                               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                 <div>
-                                   <label className="form-label" htmlFor="title-youtube" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                     <span>Título do YouTube</span>
-                                     <span style={{ fontSize: '0.7rem', color: youtubeTitle.length > 90 ? 'var(--error)' : 'var(--text-muted)' }}>
-                                       {youtubeTitle.length}/100
-                                     </span>
-                                   </label>
-                                   <input 
-                                     type="text"
-                                     id="title-youtube" 
-                                     className="form-input" 
-                                     maxLength={100}
-                                     placeholder="Digite o título do vídeo do YouTube..."
-                                     value={youtubeTitle} 
-                                     onChange={(e) => setYoutubeTitle(e.target.value)}
-                                     style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.88rem' }}
-                                   />
-                                 </div>
-                                 <div>
-                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                                     <label className="form-label" htmlFor="desc-youtube" style={{ marginBottom: 0 }}>Descrição do YouTube</label>
-                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                       <button
-                                         type="button"
-                                         onClick={() => {
-                                           if (!youtubeDescription.trim()) { alert("Digite uma descrição antes de salvar."); return; }
-                                           const name = window.prompt("Nome do modelo de descrição:");
-                                           if (name && name.trim()) {
-                                             const newTpl = { id: 'tpl_' + Date.now(), name: name.trim(), content: youtubeDescription };
-                                             const updated = [...templates, newTpl];
-                                             setTemplates(updated);
-                                             localStorage.setItem('caption_templates', JSON.stringify(updated));
-                                             addNotification('success', 'Modelo Salvo', `Modelo "${name}" salvo!`);
-                                           }
-                                         }}
-                                         style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '3px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                       >
-                                         💾 Salvar Modelo
-                                       </button>
-                                       {templates.length > 0 && (
-                                         <select
-                                           onChange={(e) => {
-                                             if (e.target.value) setYoutubeDescription(e.target.value);
-                                             e.target.value = "";
-                                           }}
-                                           style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '2px 8px', fontSize: '0.68rem', color: 'var(--text-secondary)', cursor: 'pointer', maxWidth: '100px' }}
+                               </div>
+                             )}
+
+                             {/* CONFIGURAÇÕES DE METADADOS DO TIKTOK */}
+                             {selectedPlatforms.includes('tiktok') && (!selectedPlatforms.includes('youtube') || currentSubStep === 'tiktok') && (
+                               <div className="metadata-container-box" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '16px' }}>
+                                 <span style={{ fontSize: '0.88rem', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
+                                   📹 Metadados do TikTok
+                                 </span>
+                                 
+                                 {/* Seletor de Privacidade do TikTok */}
+                                 <div className="form-group">
+                                   <label className="form-label" htmlFor="tiktok-privacy">Quem pode ver este vídeo</label>
+                                   <select 
+                                     id="tiktok-privacy" 
+                                     className="form-input"
+                                     value={tiktokPrivacy} 
+                                     onChange={(e) => setTiktokPrivacy(e.target.value)}
+                                     style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}
+                                   >
+                                     {['PUBLIC_TO_EVERYONE', 'MUTUAL_FOLLOW_FRIENDS', 'FOLLOWER_OF_CREATOR', 'SELF_ONLY'].map(opt => {
+                                       let label = opt;
+                                       if (opt === 'PUBLIC_TO_EVERYONE') label = 'Público';
+                                       else if (opt === 'MUTUAL_FOLLOW_FRIENDS') label = 'Amigos (Seguidores Mútuos)';
+                                       else if (opt === 'SELF_ONLY') label = 'Privado (Só Eu)';
+                                       else if (opt === 'FOLLOWER_OF_CREATOR') label = 'Seguidores';
+                                       
+                                       const isDisabled = opt === 'SELF_ONLY' && commercialDisclosure && promoteBrandedContent;
+                                       
+                                       return (
+                                         <option 
+                                           key={opt} 
+                                           value={opt} 
+                                           disabled={isDisabled}
                                          >
-                                           <option value="">📂 Carregar...</option>
-                                           {templates.map(t => (
-                                             <option key={t.id} value={t.content}>{t.name}</option>
-                                           ))}
-                                         </select>
-                                       )}
+                                           {label} {isDisabled ? ' - (Indisponível para Conteúdo de Marca)' : ''}
+                                         </option>
+                                       );
+                                     })}
+                                   </select>
+                                   {commercialDisclosure && promoteBrandedContent && (
+                                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                                       💡 <em>Nota: Conteúdo de Marca não permite visibilidade privada ("Só Eu").</em>
+                                     </span>
+                                   )}
+                                 </div>
+
+                                 {/* Acordeão de Configurações Avançadas do TikTok */}
+                                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px', marginTop: '12px' }}>
+                                   <button
+                                     type="button"
+                                     onClick={() => setShowTiktokAdvanced(!showTiktokAdvanced)}
+                                     style={{
+                                       background: 'none',
+                                       border: 'none',
+                                       color: 'var(--text-secondary)',
+                                       fontSize: '0.8rem',
+                                       fontWeight: 'bold',
+                                       cursor: 'pointer',
+                                       display: 'flex',
+                                       alignItems: 'center',
+                                       justifyContent: 'space-between',
+                                       width: '100%',
+                                       padding: '4px 0'
+                                     }}
+                                   >
+                                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                       🛠️ Configurações Avançadas (Dueto, Stitch, Marca)
+                                     </span>
+                                     <span style={{ fontSize: '0.7rem', transition: 'transform 0.2s', transform: showTiktokAdvanced ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                                       ▼
+                                     </span>
+                                   </button>
+
+                                   {showTiktokAdvanced && (
+                                     <div style={{ marginTop: '12px', background: 'rgba(0,0,0,0.15)', padding: '12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                       {/* Permissões de Interação */}
+                                       <div className="form-group" style={{ marginBottom: '16px' }}>
+                                         <span className="form-label" style={{ fontSize: '0.78rem', marginBottom: '8px', display: 'block', fontWeight: 'bold' }}>
+                                           Permissões de Interação (TikTok)
+                                         </span>
+                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', cursor: creatorInfo?.comment_disabled ? 'not-allowed' : 'pointer', opacity: creatorInfo?.comment_disabled ? 0.5 : 1 }}>
+                                             <input
+                                               type="checkbox"
+                                               checked={tiktokComment}
+                                               onChange={(e) => setTiktokComment(e.target.checked)}
+                                               disabled={creatorInfo?.comment_disabled}
+                                             />
+                                             Permitir Comentários {creatorInfo?.comment_disabled && ' (Desativado pelo perfil)'}
+                                           </label>
+
+                                           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', cursor: creatorInfo?.duet_disabled ? 'not-allowed' : 'pointer', opacity: creatorInfo?.duet_disabled ? 0.5 : 1 }}>
+                                             <input
+                                               type="checkbox"
+                                               checked={tiktokDuet}
+                                               onChange={(e) => setTiktokDuet(e.target.checked)}
+                                               disabled={creatorInfo?.duet_disabled}
+                                             />
+                                             Permitir Dueto {creatorInfo?.duet_disabled && ' (Desativado pelo perfil)'}
+                                           </label>
+
+                                           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', cursor: creatorInfo?.stitch_disabled ? 'not-allowed' : 'pointer', opacity: creatorInfo?.stitch_disabled ? 0.5 : 1 }}>
+                                             <input
+                                               type="checkbox"
+                                               checked={tiktokStitch}
+                                               onChange={(e) => setTiktokStitch(e.target.checked)}
+                                               disabled={creatorInfo?.stitch_disabled}
+                                             />
+                                             Permitir Ponto / Stitch {creatorInfo?.stitch_disabled && ' (Desativado pelo perfil)'}
+                                           </label>
+                                         </div>
+                                       </div>
+
+                                       {/* Divulgação de Conteúdo Comercial */}
+                                       <div className="form-group" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px', marginBottom: '0px' }}>
+                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                           <span className="form-label" style={{ fontSize: '0.78rem', marginBottom: 0, fontWeight: 'bold' }}>Conteúdo Comercial (Divulgação)</span>
+                                           <label className="switch-toggle" style={{ transform: 'scale(0.8)' }}>
+                                             <input 
+                                               type="checkbox" 
+                                               checked={commercialDisclosure} 
+                                               onChange={(e) => {
+                                                 const checked = e.target.checked;
+                                                 setCommercialDisclosure(checked);
+                                                 if (!checked) {
+                                                   setPromoteYourBrand(false);
+                                                   setPromoteBrandedContent(false);
+                                                 } else {
+                                                   if (tiktokPrivacy === 'SELF_ONLY') {
+                                                     setTiktokPrivacy('PUBLIC_TO_EVERYONE');
+                                                   }
+                                                 }
+                                               }} 
+                                             />
+                                             <span className="switch-slider"></span>
+                                           </label>
+                                         </div>
+                                         <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'block', marginBottom: '10px' }}>
+                                           Ative se o vídeo promove produtos ou serviços comerciais (seus ou de marcas parceiras).
+                                         </span>
+
+                                         {commercialDisclosure && (
+                                           <motion.div 
+                                             className="disclosure-options"
+                                             initial={{ opacity: 0, y: -8 }}
+                                             animate={{ opacity: 1, y: 0 }}
+                                             style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'rgba(0,0,0,0.15)', padding: '10px', borderRadius: '6px' }}
+                                           >
+                                             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.74rem', cursor: 'pointer' }}>
+                                               <input 
+                                                 type="checkbox" 
+                                                 checked={promoteYourBrand} 
+                                                 onChange={(e) => setPromoteYourBrand(e.target.checked)} 
+                                               />
+                                               Sua própria marca (Ex: Seu negócio ou produto próprio)
+                                             </label>
+                                             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.74rem', cursor: 'pointer' }}>
+                                               <input 
+                                                 type="checkbox" 
+                                                 checked={promoteBrandedContent} 
+                                                 onChange={(e) => {
+                                                   const checked = e.target.checked;
+                                                   setPromoteBrandedContent(checked);
+                                                   if (checked && tiktokPrivacy === 'SELF_ONLY') {
+                                                     setTiktokPrivacy('PUBLIC_TO_EVERYONE');
+                                                   }
+                                                 }} 
+                                               />
+                                               Marca de terceiro (Ex: Vídeo patrocinado por outra empresa)
+                                             </label>
+                                           </motion.div>
+                                         )}
+                                       </div>
                                      </div>
-                                   </div>
-                                   <textarea 
-                                     id="desc-youtube" className="form-textarea" 
-                                     placeholder="Escreva a descrição detalhada para o YouTube (redes, links, resumo)..."
-                                     rows={4} value={youtubeDescription} onChange={(e) => setYoutubeDescription(e.target.value)}
-                                   />
+                                   )}
                                  </div>
                                </div>
-                             )
-                           )}
-                         </div>
+                             )}
 
-                        {/* Hashtags IA */}
-                        <div className="form-group">
-                          <div className="hashtag-generator-header">
-                            <span className="form-label">Hashtags Recomendadas por IA</span>
-                            <button
-                              type="button"
-                              onClick={handleSuggestTags}
-                              className="sec-btn ai-tag-btn"
-                              disabled={isGeneratingTags || (useCustomPerPlatform ? (activeEditorTab === 'tiktok' ? !tiktokCaption : !youtubeDescription) : !caption)}
-                            >
-                              <Sparkles size={13} className={isGeneratingTags ? 'spin-animation' : ''} />
-                              {isGeneratingTags ? 'Analisando...' : 'Sugerir Tags'}
-                            </button>
-                          </div>
-                          {suggestedTags.length > 0 && (
-                            <div className="suggested-tags-list">
-                              {suggestedTags.map((tag, idx) => (
-                                <button key={idx} type="button" className="tag-pill" onClick={() => addTagToCaption(tag)}>
-                                  + {tag}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                             {/* CONFIGURAÇÕES DE METADADOS DO YOUTUBE */}
+                             {selectedPlatforms.includes('youtube') && youtubeConnected && (!selectedPlatforms.includes('tiktok') || currentSubStep === 'youtube') && (
+                               <div className="metadata-container-box" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '16px' }}>
+                                 <span style={{ fontSize: '0.88rem', fontWeight: '800', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
+                                   📹 Metadados do YouTube <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>(Canal: {youtubeChannelName})</span>
+                                 </span>
 
-                        {/* CONFIGURAÇÕES DE METADADOS DO TIKTOK */}
-                        {selectedPlatforms.includes('tiktok') && (
-                          <div className="tiktok-metadata-section glass-panel" style={{ marginTop: '20px', padding: '16px', border: '1px solid rgba(22, 119, 255, 0.15)', borderRadius: '8px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '8px' }}>
-                              <TikTokIcon size={16} />
-                              <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#fff' }}>Metadados do TikTok</span>
-                              {tiktokNickname && (
-                                <span style={{ fontSize: '0.75rem', opacity: 0.6, marginLeft: 'auto' }}>
-                                  Destino: <strong style={{ color: 'var(--tiktok-cyan)' }}>@{tiktokNickname}</strong>
-                                </span>
-                              )}
-                            </div>
+                                 {/* Visibilidade do YouTube */}
+                                 <div className="form-group">
+                                   <label className="form-label" htmlFor="youtube-privacy">Privacidade do Vídeo</label>
+                                   <select 
+                                     id="youtube-privacy" 
+                                     className="form-input"
+                                     value={youtubePrivacy} 
+                                     onChange={(e) => setYoutubePrivacy(e.target.value)}
+                                     style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}
+                                   >
+                                     <option value="public">Público (Imediato)</option>
+                                     <option value="unlisted">Não Listado</option>
+                                     <option value="private">Privado</option>
+                                   </select>
+                                 </div>
 
-                            {/* Nickname e Avatar da Conta */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '6px' }}>
-                              {tiktokAvatar ? (
-                                <img src={tiktokAvatar} alt="Avatar" style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
-                              ) : (
-                                <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#222', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold' }}>
-                                  {(tiktokNickname || 'T').charAt(0).toUpperCase()}
-                                </div>
-                              )}
-                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                Publicando na conta de: <strong>{tiktokNickname || 'Conta Sandbox'}</strong>
-                              </span>
-                            </div>
+                                 {/* Acordeão de Configurações Avançadas do YouTube */}
+                                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px', marginTop: '12px' }}>
+                                   <button
+                                     type="button"
+                                     onClick={() => setShowYoutubeAdvanced(!showYoutubeAdvanced)}
+                                     style={{
+                                       background: 'none',
+                                       border: 'none',
+                                       color: 'var(--text-secondary)',
+                                       fontSize: '0.8rem',
+                                       fontWeight: 'bold',
+                                       cursor: 'pointer',
+                                       display: 'flex',
+                                       alignItems: 'center',
+                                       justifyContent: 'space-between',
+                                       width: '100%',
+                                       padding: '4px 0'
+                                     }}
+                                   >
+                                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                       🛠️ Configurações Avançadas (Tags, Categoria, Público)
+                                     </span>
+                                     <span style={{ fontSize: '0.7rem', transition: 'transform 0.2s', transform: showYoutubeAdvanced ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                                       ▼
+                                     </span>
+                                   </button>
 
-                            {/* Dropdown de Privacidade (Privacy Status) */}
-                            <div className="form-group" style={{ marginBottom: '16px' }}>
-                              <label className="form-label" htmlFor="tiktok-privacy" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                Status de Privacidade (Obrigatório)
-                                <span style={{ fontSize: '0.7rem', color: 'var(--error)' }}>* Requer seleção manual</span>
-                              </label>
-                              <select
-                                id="tiktok-privacy"
-                                className="form-input"
-                                value={tiktokPrivacy}
-                                onChange={(e) => setTiktokPrivacy(e.target.value)}
-                                style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.82rem' }}
-                              >
-                                <option value="" disabled>Selecione o nível de privacidade...</option>
-                                {creatorInfo?.privacy_level_options?.map((opt) => {
-                                  let label = opt;
-                                  if (opt === 'PUBLIC_TO_EVERYONE') label = 'Público (Todos)';
-                                  else if (opt === 'MUTUAL_FOLLOW_FRIENDS') label = 'Amigos (Seguidores Mútuos)';
-                                  else if (opt === 'SELF_ONLY') label = 'Apenas Eu (Privado)';
-                                  else if (opt === 'FOLLOWER_OF_CREATOR') label = 'Seguidores';
-                                  
-                                  const isDisabled = opt === 'SELF_ONLY' && commercialDisclosure && promoteBrandedContent;
-                                  
-                                  return (
-                                    <option 
-                                      key={opt} 
-                                      value={opt} 
-                                      disabled={isDisabled}
-                                    >
-                                      {label} {isDisabled ? ' - (Indisponível para Conteúdo de Marca)' : ''}
-                                    </option>
-                                  );
-                                })}
-                              </select>
-                              {commercialDisclosure && promoteBrandedContent && (
-                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
-                                  💡 <em>Nota: Conteúdo de Marca não permite visibilidade privada ("Só Eu").</em>
-                                </span>
-                              )}
-                            </div>
+                                   {showYoutubeAdvanced && (
+                                     <div style={{ marginTop: '12px', background: 'rgba(0,0,0,0.15)', padding: '12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.04)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                       
+                                       {/* Campo Tags do Vídeo */}
+                                       <div className="form-group" style={{ marginBottom: '0px' }}>
+                                         <label className="form-label" htmlFor="youtube-tags" style={{ fontSize: '0.78rem' }}>
+                                           Tags / Palavras-chave do Vídeo
+                                         </label>
+                                         <input
+                                           type="text"
+                                           id="youtube-tags"
+                                           className="form-input"
+                                           placeholder="recap, anime, resumo, viral (separadas por vírgula)"
+                                           value={youtubeTags}
+                                           onChange={(e) => setYoutubeTags(e.target.value)}
+                                           style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.82rem' }}
+                                         />
+                                         <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                                           As tags ajudam na pesquisa e indexação do seu vídeo pelo algoritmo do YouTube.
+                                         </span>
+                                       </div>
 
-                            {/* Acordeão de Configurações Avançadas do TikTok */}
-                            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px', marginTop: '12px' }}>
-                              <button
-                                type="button"
-                                onClick={() => setShowTiktokAdvanced(!showTiktokAdvanced)}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  color: 'var(--text-secondary)',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 'bold',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  width: '100%',
-                                  padding: '4px 0'
-                                }}
-                              >
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  🛠️ Configurações Avançadas (Dueto, Stitch, Marca)
-                                </span>
-                                <span style={{ fontSize: '0.7rem', transition: 'transform 0.2s', transform: showTiktokAdvanced ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                                  ▼
-                                </span>
-                              </button>
+                                       {/* Categoria do Vídeo */}
+                                       <div className="form-group" style={{ marginBottom: '0px' }}>
+                                         <label className="form-label" htmlFor="youtube-category" style={{ fontSize: '0.78rem' }}>
+                                           Categoria do Vídeo
+                                         </label>
+                                         <select
+                                           id="youtube-category"
+                                           className="form-input"
+                                           value={youtubeCategory}
+                                           onChange={(e) => setYoutubeCategory(e.target.value)}
+                                           style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.82rem' }}
+                                         >
+                                           <option value="24">Entretenimento</option>
+                                           <option value="1">Filmes & Desenhos</option>
+                                           <option value="10">Música</option>
+                                           <option value="20">Jogos (Gaming)</option>
+                                           <option value="22">Pessoas & Blogs</option>
+                                           <option value="23">Comédia</option>
+                                           <option value="27">Educação</option>
+                                           <option value="28">Ciência & Tecnologia</option>
+                                         </select>
+                                       </div>
 
-                              {showTiktokAdvanced && (
-                                <div style={{ marginTop: '12px', background: 'rgba(0,0,0,0.15)', padding: '12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.04)' }}>
-                                  {/* Permissões de Interação */}
-                                  <div className="form-group" style={{ marginBottom: '16px' }}>
-                                    <span className="form-label" style={{ fontSize: '0.78rem', marginBottom: '8px', display: 'block', fontWeight: 'bold' }}>
-                                      Permissões de Interação (TikTok)
-                                    </span>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', cursor: creatorInfo?.comment_disabled ? 'not-allowed' : 'pointer', opacity: creatorInfo?.comment_disabled ? 0.5 : 1 }}>
-                                        <input
-                                          type="checkbox"
-                                          checked={tiktokComment}
-                                          onChange={(e) => setTiktokComment(e.target.checked)}
-                                          disabled={creatorInfo?.comment_disabled}
-                                        />
-                                        Permitir Comentários {creatorInfo?.comment_disabled && ' (Desativado pelo perfil)'}
-                                      </label>
+                                       {/* Público (Made for kids) */}
+                                       <div className="form-group" style={{ marginBottom: '0px' }}>
+                                         <span className="form-label" style={{ fontSize: '0.78rem', marginBottom: '6px', display: 'block' }}>Restrição de Conteúdo</span>
+                                         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', cursor: 'pointer' }}>
+                                           <input 
+                                             type="checkbox" 
+                                             checked={youtubeMadeForKids} 
+                                             onChange={(e) => setYoutubeMadeForKids(e.target.checked)} 
+                                           />
+                                           Este conteúdo é destinado a crianças (Obrigatório COPPA)
+                                         </label>
+                                       </div>
+                                     </div>
+                                   )}
+                                 </div>
+                               </div>
+                             )}
 
-                                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', cursor: creatorInfo?.duet_disabled ? 'not-allowed' : 'pointer', opacity: creatorInfo?.duet_disabled ? 0.5 : 1 }}>
-                                        <input
-                                          type="checkbox"
-                                          checked={tiktokDuet}
-                                          onChange={(e) => setTiktokDuet(e.target.checked)}
-                                          disabled={creatorInfo?.duet_disabled}
-                                        />
-                                        Permitir Dueto {creatorInfo?.duet_disabled && ' (Desativado pelo perfil)'}
-                                      </label>
+                             {/* AGENDADOR DE POSTAGE */}
+                             <div className="form-group" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '16px' }}>
+                               <div className="scheduler-header">
+                                 <div className="sched-label-wrap">
+                                   <Calendar size={16} color="var(--primary)" />
+                                   <span className="form-label" style={{ marginBottom: 0 }}>Agendar Publicação</span>
+                                 </div>
+                                 <label className="switch-toggle">
+                                   <input 
+                                     type="checkbox" 
+                                     checked={isScheduled} 
+                                     onChange={(e) => setIsScheduled(e.target.checked)} 
+                                   />
+                                   <span className="switch-slider"></span>
+                                 </label>
+                               </div>
 
-                                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', cursor: creatorInfo?.stitch_disabled ? 'not-allowed' : 'pointer', opacity: creatorInfo?.stitch_disabled ? 0.5 : 1 }}>
-                                        <input
-                                          type="checkbox"
-                                          checked={tiktokStitch}
-                                          onChange={(e) => setTiktokStitch(e.target.checked)}
-                                          disabled={creatorInfo?.stitch_disabled}
-                                        />
-                                        Permitir Ponto / Stitch {creatorInfo?.stitch_disabled && ' (Desativado pelo perfil)'}
-                                      </label>
-                                    </div>
-                                  </div>
+                               {isScheduled && (
+                                 <motion.div 
+                                   className="scheduler-panel glass-panel"
+                                   initial={{ opacity: 0, height: 0 }}
+                                   animate={{ opacity: 1, height: 'auto' }}
+                                   exit={{ opacity: 0, height: 0 }}
+                                   style={{ marginTop: '12px', padding: '14px', overflow: 'hidden' }}
+                                 >
+                                   <div className="form-group" style={{ marginBottom: 0 }}>
+                                     <label className="form-label" style={{ fontSize: '0.8rem' }}>Escolha Data & Horário de Postagem</label>
+                                     <input 
+                                       type="datetime-local" 
+                                       className="form-input" 
+                                       value={scheduleDateTime}
+                                       onChange={(e) => setScheduleDateTime(e.target.value)}
+                                       style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}
+                                     />
+                                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginTop: '6px' }}>
+                                       ⚡ <strong>Horário Sugerido por IA:</strong> Hoje às 19:30 (Baseado na retenção média).
+                                     </span>
+                                   </div>
+                                 </motion.div>
+                               )}
+                             </div>
 
-                                  {/* Divulgação de Conteúdo Comercial */}
-                                  <div className="form-group" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px', marginBottom: '0px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                      <span className="form-label" style={{ fontSize: '0.78rem', marginBottom: 0, fontWeight: 'bold' }}>Conteúdo Comercial (Divulgação)</span>
-                                      <label className="switch-toggle" style={{ transform: 'scale(0.8)' }}>
-                                        <input
-                                          type="checkbox"
-                                          checked={commercialDisclosure}
-                                          onChange={(e) => {
-                                            const val = e.target.checked;
-                                            setCommercialDisclosure(val);
-                                            if (!val) {
-                                              setPromoteYourBrand(false);
-                                              setPromoteBrandedContent(false);
-                                            }
-                                          }}
-                                        />
-                                        <span className="switch-slider"></span>
-                                      </label>
-                                    </div>
+                             {/* Declaração de Consentimento Obrigatória */}
+                             {selectedPlatforms.includes('tiktok') && (!selectedPlatforms.includes('youtube') || currentSubStep === 'tiktok') && (
+                               <div className="consent-statement-box" style={{ 
+                                 marginTop: '20px', 
+                                 padding: '12px', 
+                                 background: 'rgba(255, 255, 255, 0.03)', 
+                                 border: '1px solid rgba(255, 255, 255, 0.05)', 
+                                 borderRadius: '6px', 
+                                 fontSize: '0.75rem', 
+                                 color: 'var(--text-secondary)',
+                                 textAlign: 'center',
+                                 lineHeight: '1.4'
+                               }}>
+                                 🔒 <strong>Termos de Consentimento:</strong> {getConsentStatement()}
+                               </div>
+                             )}
 
-                                    {commercialDisclosure && (
-                                      <div style={{ background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '6px', display: 'flex', flexDirection: 'column', gap: '10px', border: '1px solid rgba(255,255,255,0.04)', marginTop: '8px' }}>
-                                        <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-                                          Selecione as opções de promoção comercial para este conteúdo:
-                                        </span>
-
-                                        {/* Checkbox: Sua Marca */}
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', cursor: 'pointer' }}>
-                                            <input
-                                              type="checkbox"
-                                              checked={promoteYourBrand}
-                                              onChange={(e) => setPromoteYourBrand(e.target.checked)}
-                                            />
-                                            Sua Marca (Sua empresa/negócio)
-                                          </label>
-                                          {promoteYourBrand && (
-                                            <span style={{ fontSize: '0.7rem', color: 'var(--tiktok-magenta)', marginLeft: '22px' }}>
-                                              📢 Sua foto/vídeo será rotulado como <strong>"Conteúdo Promocional"</strong>
-                                            </span>
-                                          )}
-                                        </div>
-
-                                        {/* Checkbox: Conteúdo de Marca */}
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', cursor: 'pointer' }}>
-                                            <input
-                                              type="checkbox"
-                                              checked={promoteBrandedContent}
-                                              onChange={(e) => {
-                                                const val = e.target.checked;
-                                                setPromoteBrandedContent(val);
-                                                if (val && tiktokPrivacy === 'SELF_ONLY') {
-                                                  setTiktokPrivacy('');
-                                                  alert('A visibilidade de conteúdo de marca não pode ser privada ("Só Eu"). A seleção de privacidade foi redefinida.');
-                                                }
-                                              }}
-                                            />
-                                            Conteúdo de Marca (Promovendo outro negócio)
-                                          </label>
-                                          {promoteBrandedContent && (
-                                            <span style={{ fontSize: '0.7rem', color: 'var(--tiktok-magenta)', marginLeft: '22px' }}>
-                                              🤝 Sua foto/vídeo será rotulado como <strong>"Parceria paga"</strong>
-                                            </span>
-                                          )}
-                                        </div>
-
-                                        {promoteYourBrand && promoteBrandedContent && (
-                                          <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '6px', fontSize: '0.7rem', color: '#ffc107' }}>
-                                            ⚠️ Como ambas as opções foram marcadas, a publicação será rotulada como <strong>"Parceria paga"</strong>.
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* CONFIGURAÇÕES DE METADADOS DO YOUTUBE */}
-                        {selectedPlatforms.includes('youtube') && youtubeConnected && (
-                          <div className="youtube-metadata-section glass-panel" style={{ marginTop: '20px', padding: '16px', border: '1px solid rgba(255, 0, 0, 0.15)', borderRadius: '8px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '8px' }}>
-                              <YoutubeIcon size={16} />
-                              <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#fff' }}>Metadados do YouTube</span>
-                              {youtubeChannelName && (
-                                <span style={{ fontSize: '0.75rem', opacity: 0.6, marginLeft: 'auto' }}>
-                                  Canal: <strong style={{ color: '#ff0000' }}>{youtubeChannelName}</strong>
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Canal Avatar e Nome */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '6px' }}>
-                              {youtubeAvatar ? (
-                                <img src={youtubeAvatar} alt="YouTube Avatar" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
-                              ) : (
-                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#222', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold' }}>
-                                  {(youtubeChannelName || 'Y').charAt(0).toUpperCase()}
-                                </div>
-                              )}
-                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                Publicando no canal: <strong>{youtubeChannelName || 'Canal do YouTube'}</strong>
-                              </span>
-                            </div>
-
-                            {/* Seletor de Formato (Shorts ou Vídeo) - Apenas se for menor de 3 minutos */}
-                            {videoDuration === 0 || videoDuration < 180 ? (
-                              <div className="form-group" style={{ marginBottom: '16px' }}>
-                                <label className="form-label" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                  Formato de Publicação (Vídeo com menos de 3 minutos)
-                                </label>
-                                <div style={{ display: 'flex', gap: '20px', marginTop: '6px' }}>
-                                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', cursor: 'pointer', color: youtubeFormat === 'shorts' ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: youtubeFormat === 'shorts' ? 'bold' : 'normal' }}>
-                                    <input 
-                                      type="radio" 
-                                      name="youtube-format" 
-                                      value="shorts" 
-                                      checked={youtubeFormat === 'shorts'}
-                                      onChange={(e) => setYoutubeFormat(e.target.value)}
-                                      style={{ accentColor: 'var(--primary)' }}
-                                    />
-                                    YouTube Shorts (Vertical)
-                                  </label>
-                                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', cursor: 'pointer', color: youtubeFormat === 'video' ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: youtubeFormat === 'video' ? 'bold' : 'normal' }}>
-                                    <input 
-                                      type="radio" 
-                                      name="youtube-format" 
-                                      value="video" 
-                                      checked={youtubeFormat === 'video'}
-                                      onChange={(e) => setYoutubeFormat(e.target.value)}
-                                      style={{ accentColor: 'var(--primary)' }}
-                                    />
-                                    Vídeo Tradicional (Horizontal)
-                                  </label>
-                                </div>
-                              </div>
-                            ) : (
-                              <div style={{ marginBottom: '16px', background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                                <span style={{ fontSize: '0.72rem', color: '#ffc107', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  ℹ️ Vídeo com mais de 3 minutos será publicado como Vídeo Tradicional no YouTube.
-                                </span>
-                              </div>
-                            )}
-
-                            {/* Dropdown de Privacidade do YouTube */}
-                            <div className="form-group" style={{ marginBottom: '16px' }}>
-                              <label className="form-label" htmlFor="youtube-privacy" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                Visibilidade do Vídeo (Obrigatório)
-                                <span style={{ fontSize: '0.7rem', color: 'var(--error)' }}>* Requer seleção manual</span>
-                              </label>
-                              <select
-                                id="youtube-privacy"
-                                className="form-input"
-                                value={youtubePrivacy}
-                                onChange={(e) => setYoutubePrivacy(e.target.value)}
-                                style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.82rem' }}
-                              >
-                                <option value="public">Público (Visível para todos)</option>
-                                <option value="unlisted">Não Listado (Apenas quem tem o link)</option>
-                                <option value="private">Privado (Apenas você pode ver)</option>
-                              </select>
-                              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '6px', lineHeight: '1.3' }}>
-                                Nota de Transparência: Para testes de auditoria na console do YouTube, sugerimos manter como <strong>Privado</strong> ou <strong>Não Listado</strong>.
-                              </p>
-                            </div>
-
-                            {/* Acordeão de Configurações Avançadas do YouTube */}
-                            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px', marginTop: '12px' }}>
-                              <button
-                                type="button"
-                                onClick={() => setShowYoutubeAdvanced(!showYoutubeAdvanced)}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  color: 'var(--text-secondary)',
-                                  fontSize: '0.8rem',
-                                  fontWeight: 'bold',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  width: '100%',
-                                  padding: '4px 0'
-                                }}
-                              >
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  🛠️ Configurações Avançadas (Tags, Categoria, Classificação)
-                                </span>
-                                <span style={{ fontSize: '0.7rem', transition: 'transform 0.2s', transform: showYoutubeAdvanced ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                                  ▼
-                                </span>
-                              </button>
-
-                              {showYoutubeAdvanced && (
-                                <div style={{ marginTop: '12px', background: 'rgba(0,0,0,0.15)', padding: '12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.04)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                                  
-                                  {/* Campo Tags do Vídeo */}
-                                  <div className="form-group" style={{ marginBottom: '0px' }}>
-                                    <label className="form-label" htmlFor="youtube-tags" style={{ fontSize: '0.78rem' }}>
-                                      Tags / Palavras-chave do Vídeo
-                                    </label>
-                                    <input
-                                      type="text"
-                                      id="youtube-tags"
-                                      className="form-input"
-                                      placeholder="recap, anime, resumo, viral (separadas por vírgula)"
-                                      value={youtubeTags}
-                                      onChange={(e) => setYoutubeTags(e.target.value)}
-                                      style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.82rem' }}
-                                    />
-                                    <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                                      As tags ajudam na pesquisa e indexação do seu vídeo pelo algoritmo do YouTube.
-                                    </span>
-                                  </div>
-
-                                  {/* Categoria do Vídeo */}
-                                  <div className="form-group" style={{ marginBottom: '0px' }}>
-                                    <label className="form-label" htmlFor="youtube-category" style={{ fontSize: '0.78rem' }}>
-                                      Categoria do Vídeo
-                                    </label>
-                                    <select
-                                      id="youtube-category"
-                                      className="form-input"
-                                      value={youtubeCategory}
-                                      onChange={(e) => setYoutubeCategory(e.target.value)}
-                                      style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', fontSize: '0.82rem' }}
-                                    >
-                                      <option value="24">Entretenimento</option>
-                                      <option value="20">Jogos / Gaming</option>
-                                      <option value="22">Pessoas e Blogs</option>
-                                      <option value="1">Filmes e Desenhos</option>
-                                      <option value="10">Música</option>
-                                      <option value="27">Educação</option>
-                                      <option value="28">Ciência e Tecnologia</option>
-                                    </select>
-                                  </div>
-
-                                  {/* Classificação de Conteúdo Infantil */}
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', cursor: 'pointer' }}>
-                                      <input
-                                        type="checkbox"
-                                        checked={youtubeMadeForKids}
-                                        onChange={(e) => setYoutubeMadeForKids(e.target.checked)}
-                                      />
-                                      Este vídeo é <strong>"Destinado para Crianças"</strong> (Livre)
-                                    </label>
-                                    <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginLeft: '20px', lineHeight: '1.2' }}>
-                                      ⚠️ Obrigatório por lei (COPPA). Vídeos para crianças exibem anúncios limitados e desativam os comentários.
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* AGENDADOR DE POSTAGEM */}
-                        <div className="form-group" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '16px' }}>
-                          <div className="scheduler-header">
-                            <div className="sched-label-wrap">
-                              <Calendar size={16} color="var(--primary)" />
-                              <span className="form-label" style={{ marginBottom: 0 }}>Agendar Publicação</span>
-                            </div>
-                            <label className="switch-toggle">
-                              <input 
-                                type="checkbox" 
-                                checked={isScheduled} 
-                                onChange={(e) => setIsScheduled(e.target.checked)} 
-                              />
-                              <span className="switch-slider"></span>
-                            </label>
-                          </div>
-
-                          {isScheduled && (
-                            <motion.div 
-                              className="scheduler-panel glass-panel"
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              exit={{ opacity: 0, height: 0 }}
-                              style={{ marginTop: '12px', padding: '14px', overflow: 'hidden' }}
-                            >
-                              <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label" style={{ fontSize: '0.8rem' }}>Escolha Data & Horário de Postagem</label>
-                                <input 
-                                  type="datetime-local" 
-                                  className="form-input" 
-                                  value={scheduleDateTime}
-                                  onChange={(e) => setScheduleDateTime(e.target.value)}
-                                  style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}
-                                />
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginTop: '6px' }}>
-                                  ⚡ <strong>Horário Sugerido por IA:</strong> Hoje às 19:30 (Baseado na retenção média).
-                                </span>
-                              </div>
-                            </motion.div>
-                          )}
-                        </div>
-
-                        {/* Declaração de Consentimento Obrigatória */}
-                        {selectedPlatforms.includes('tiktok') && (
-                          <div className="consent-statement-box" style={{ 
-                            marginTop: '20px', 
-                            padding: '12px', 
-                            background: 'rgba(255, 255, 255, 0.03)', 
-                            border: '1px solid rgba(255, 255, 255, 0.05)', 
-                            borderRadius: '6px', 
-                            fontSize: '0.75rem', 
-                            color: 'var(--text-secondary)',
-                            textAlign: 'center',
-                            lineHeight: '1.4'
-                          }}>
-                            🔒 <strong>Termos de Consentimento:</strong> {getConsentStatement()}
-                          </div>
-                        )}
-
-                        {/* Botoes de Acao do Stepper */}
-                        <div className="stepper-actions-row" style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
-                          <button 
-                            type="button" 
-                            onClick={() => setCreationStep(1)} 
-                            className="sec-btn"
-                            style={{ flex: '1', justifyContent: 'center', height: '46px' }}
-                          >
-                            <ArrowLeft size={16} style={{ marginRight: '6px' }} /> Voltar
-                          </button>
-                          
-                          <button 
-                            type="submit" className="glow-btn publish-btn" 
-                            style={{ flex: '2', justifyContent: 'center', height: '46px' }} 
-                            disabled={isPublishDisabled}
-                            title={
-                              (selectedPlatforms.includes('tiktok') && commercialDisclosure && !promoteYourBrand && !promoteBrandedContent)
-                                ? "Você precisa indicar se seu conteúdo promove a si mesmo, a um terceiro ou ambos."
-                                : ""
-                            }
-                          >
-                            {isScheduled ? 'Agendar Postagem' : 'Publicar nas Redes'}
-                          </button>
-                        </div>
-
+                             {/* Botoes de Acao do Stepper */}
+                             <div className="stepper-actions-row" style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                               <button 
+                                 type="button" 
+                                 onClick={() => {
+                                   if (selectedPlatforms.includes('tiktok') && selectedPlatforms.includes('youtube') && currentSubStep === 'youtube') {
+                                     setCurrentSubStep('tiktok');
+                                   } else {
+                                     setCreationStep(1);
+                                   }
+                                 }} 
+                                 className="sec-btn"
+                                 style={{ flex: '1', justifyContent: 'center', height: '46px' }}
+                               >
+                                 <ArrowLeft size={16} style={{ marginRight: '6px' }} /> Voltar
+                               </button>
+                               
+                               {selectedPlatforms.includes('tiktok') && selectedPlatforms.includes('youtube') && currentSubStep === 'tiktok' ? (
+                                 <button 
+                                   type="button" 
+                                   onClick={() => {
+                                     if (!tiktokCaption.trim()) {
+                                       alert("Por favor, preencha a legenda do TikTok antes de avançar.");
+                                       return;
+                                     }
+                                     setCurrentSubStep('youtube');
+                                   }}
+                                   className="glow-btn publish-btn" 
+                                   style={{ flex: '2', justifyContent: 'center', height: '46px', background: 'linear-gradient(135deg, var(--tiktok-magenta), #ff0000)', color: '#fff', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                 >
+                                   Configurar YouTube ➔
+                                 </button>
+                               ) : (
+                                 <button 
+                                   type="submit" className="glow-btn publish-btn" 
+                                   style={{ flex: '2', justifyContent: 'center', height: '46px' }} 
+                                   disabled={isPublishDisabled}
+                                   title={
+                                     (selectedPlatforms.includes('tiktok') && commercialDisclosure && !promoteYourBrand && !promoteBrandedContent)
+                                       ? "Você precisa indicar se seu conteúdo promove a si mesmo, a um terceiro ou ambos."
+                                       : ""
+                                   }
+                                 >
+                                   {isScheduled ? 'Agendar Postagem' : 'Publicar nas Redes'}
+                                 </button>
+                               )}
+                             </div>
+                           </>
+                         )}
                       </div>
                     )}
 
