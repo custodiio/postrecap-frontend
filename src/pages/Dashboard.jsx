@@ -153,6 +153,7 @@ export default function Dashboard() {
   
   const [suggestedHashtags, setSuggestedHashtags] = useState([]);
   const [selectedPatternId, setSelectedPatternId] = useState('');
+  const [currentSubStep, setCurrentSubStep] = useState('tiktok'); // 'tiktok' ou 'youtube'
   const [showTemplateSaveInput, setShowTemplateSaveInput] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [activeEditorTab, setActiveEditorTab] = useState('tiktok'); // 'tiktok' ou 'youtube' no modo personalizado
