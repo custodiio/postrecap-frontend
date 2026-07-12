@@ -2129,7 +2129,7 @@ export default function Dashboard() {
 
                                  {/* Visibilidade do YouTube */}
                                   <div className="form-group">
-                                    <label className="form-label" htmlFor="youtube-privacy">Privacidade do Vídeo</label>
+                                    <label className="form-label" htmlFor="youtube-privacy">Visibilidade do Vídeo</label>
                                     <select 
                                       id="youtube-privacy" 
                                       className="form-input"
@@ -2137,10 +2137,15 @@ export default function Dashboard() {
                                       onChange={(e) => setYoutubePrivacy(e.target.value)}
                                       style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}
                                     >
-                                      <option value="public">Público (Imediato)</option>
-                                      <option value="unlisted">Não Listado</option>
-                                      <option value="private">Privado</option>
+                                      <option value="private">📝 Rascunho (revisar antes de publicar)</option>
+                                      <option value="public">🌎 Público (publicar imediatamente)</option>
+                                      <option value="unlisted">🔗 Não Listado (só via link)</option>
                                     </select>
+                                    {youtubePrivacy === 'private' && (
+                                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                                        ✅ O vídeo será enviado como rascunho. Você pode revisar e publicar no YouTube Studio.
+                                      </span>
+                                    )}
                                   </div>
 
                                   {/* Formato de Publicação do YouTube (Obrigatório / Condicional por tamanho) */}
